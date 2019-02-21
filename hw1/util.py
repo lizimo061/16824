@@ -55,6 +55,7 @@ def load_pascal(data_dir, class_names, split='train'):
     for i in xrange(image_num):
         # Resize image
         image = Image.open(os.path.join(img_dir, image_name[i]+".jpg"))
+        print os.path.join(img_dir, image_name[i]+".jpg")
         image = image.resize((256,256))
         image_np = np.array(image)
         images[i,:,:,:] = image_np[np.newaxis,:,:,:]
@@ -142,3 +143,30 @@ def get_el(arr, i):
         return arr[i]
     except IndexError:
         return arr
+
+
+if __name__ == '__main__':
+    data_dir = '/home/zimol/Downloads/16824_data/VOCdevkit/VOC2007'
+    class_names = ['aeroplane',
+    'bicycle',
+    'bird',
+    'boat',
+    'bottle',
+    'bus',
+    'car',
+    'cat',
+    'chair',
+    'cow',
+    'diningtable',
+    'dog',
+    'horse',
+    'motorbike',
+    'person',
+    'pottedplant',
+    'sheep',
+    'sofa',
+    'train',
+    'tvmonitor',]
+    load_pascal(data_dir, class_names, split='train')
+
+
