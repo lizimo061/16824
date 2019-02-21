@@ -2,6 +2,8 @@ import numpy as np
 import sklearn.metrics
 import tensorflow as tf
 from tensorflow import keras
+import os
+from PIL import Image
 
 
 def set_session():
@@ -37,6 +39,41 @@ def load_pascal(data_dir, class_names, split='train'):
             are ambiguous.
     """
     ## TODO Implement this function
+    img_dir = os.path.join(data_dir, 'JPEGImages')
+    imgset_dir = os.path.join(data_dir, 'ImageSets','Main')
+
+    print "Reading from ", data_dir
+
+    image_list = open(os.path.join(imgset_dir, split+".txt"), "r").read()
+    image_name = image_list.split('\n')[:-1]
+    image_num = len(image_name)
+
+    images = np.zeros((image_num,256,256,3), dtype=np.float32)
+    labels = np.zeros((image_num,20), dtype=np.int32)
+    weights = np.zeros((image_num,20), dtype=np.int32)
+
+    for i in xrange(image_num):
+        # Resize image
+        image = Image.open(os.path.join(img_dir, image_name[i]+".jpg"))
+        image = image.resize((256,256))
+        image_np = np.array(image)
+        images[i,:,:,:] = image_np[np.newaxis,:,:,:]
+
+        for j,each_class in enumerate(class_names):
+            class_file = os.path.join(imgset_dir, each_class+"_"+split+".txt")
+            class_data = np.loadtxt(class_file, dtype=str)
+            image_loc = np.where(class_data == image_name[i])
+            image_label = class_data[np.asscalar(image_loc[0])][1]
+
+            if image_label == '1':
+                labels[i,j] = 1
+                weights[i,j] = 1
+            else:
+                labels[i,j] = 0
+                weights[i,j] = 1
+                if image_label == '0':
+                    weights[i,j] = 0
+
     return images, labels, weights
 
 
