@@ -39,6 +39,8 @@ def load_pascal(data_dir, class_names, split='train'):
             are ambiguous.
     """
     ## TODO Implement this function
+    img_w = 224
+    img_h = 224
     img_dir = os.path.join(data_dir, 'JPEGImages')
     imgset_dir = os.path.join(data_dir, 'ImageSets','Main')
 
@@ -48,7 +50,7 @@ def load_pascal(data_dir, class_names, split='train'):
     image_name = image_list.split('\n')[:-1]
     image_num = len(image_name)
 
-    images = np.zeros((image_num,256,256,3), dtype=np.float32)
+    images = np.zeros((image_num,img_h,img_w,3), dtype=np.float32)
     labels = np.zeros((image_num,20), dtype=np.int32)
     weights = np.zeros((image_num,20), dtype=np.int32)
 
@@ -56,7 +58,7 @@ def load_pascal(data_dir, class_names, split='train'):
         # Resize image
         image = Image.open(os.path.join(img_dir, image_name[i]+".jpg"))
         print os.path.join(img_dir, image_name[i]+".jpg")
-        image = image.resize((256,256))
+        image = image.resize((img_h,img_w))
         image_np = np.array(image)
         images[i,:,:,:] = image_np[np.newaxis,:,:,:]
 
