@@ -82,7 +82,7 @@ def main():
 
     train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
                                                                  class_names=CLASS_NAMES,
-                                                                 split='testval')
+                                                                 split='trainval')
     test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
                                                               class_names=CLASS_NAMES,
                                                               split='test')
