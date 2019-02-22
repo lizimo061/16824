@@ -134,7 +134,24 @@ def eval_dataset_map(model, dataset):
          AP (list): Average Precision for all classes
          MAP (float): mean average precision
     """
+    gt = []
+    pred = []
+    valid = []
+    for batch, (images, labels, weights) in enumerate(dataset):
+        predictions = model(images)
+        for i, logits in enumerate(preictions):
+            p = tf.nn.softmax(logits)
+            gt.append(p)
+            pred.append(labels[i,:])
+            valid.append(weights[i,:])
+    gt = np.array(gt)
+    pred = np.array(pred)
+    valid = np.array(valid)
+
+    AP = compute_ap(gt, pred, valid)
+    mAP = AP/float(gt.shape[1])
     ## TODO implement the code here
+
     return AP, mAP
 
 
@@ -144,7 +161,7 @@ def get_el(arr, i):
     except IndexError:
         return arr
 
-
+# For debugging
 if __name__ == '__main__':
     data_dir = '/home/zimol/Downloads/16824_data/VOCdevkit/VOC2007'
     class_names = ['aeroplane',
@@ -168,5 +185,3 @@ if __name__ == '__main__':
     'train',
     'tvmonitor',]
     load_pascal(data_dir, class_names, split='train')
-
-

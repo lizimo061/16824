@@ -87,6 +87,18 @@ def main():
                                                               split='test')
 
     ## TODO modify the following code to apply data augmentation here
+    # train_images_aug_flip = train_images.map(lambda img: tf.image.random_flip_left_right(img))
+    # test_images_aug_flip = test_images.map(lambda img: tf.image.random_flip_left_right(img))
+    #
+    # np.append(train_images, train_images_aug_flip, axis=0)
+    # np.append(train_labels, train_labels, axis=0)
+    # np.append(train_weights, train_weights, axis=0)
+    #
+    # np.append(test_images, test_images_aug_flip, axis=0)
+    # np.append(test_labels, test_labels, axis=0)
+    # np.append(test_weights, test_weights, axis=0)
+
+
     train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels, train_weights))
     train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
     test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
@@ -103,8 +115,56 @@ def main():
     writer.set_as_default()
 
     ## TODO write the training and testing code for multi-label classification
+    global_step = tf.train.get_or_create_global_step()
+    optimizer = tf.train.AdamOptimizer(learning_rate=args.lr)
+    train_log = {'iter': [], 'loss': [], 'accuracy': []}
+    test_log = {'iter': [], 'loss': [], 'accuracy': []}
+
+    for ep in range(args.epoch):
+        epoch_loss_avg = tfe.metrics.Mean()
+        epoch_accuracy = tfe.metrics.Accuracy()
+
+        for batch, (images, labels, weights) in enumerate(train_dataset):
+            # Augmentation here ???
+            loss_value, grads = util.cal_grad(model,
+                                              loss_func=tf.losses.sparse_softmax_cross_entropy,
+                                              inputs=images,
+                                              targets=labels,
+                                              weights=weights)
+            optimizer.apply_gradients(zip(grads,
+                                          model.trainable_variables),
+                                      global_step)
+            epoch_loss_avg(loss_value)
+            epoch_accuracy(tf.argmax(model(images),
+                                     axis=1,
+                                     output_type=tf.int32),
+                           labels)
+            if global_step.numpy() % args.log_interval == 0:
+                # For visualization
+                tf.contrib.summary.scalar('training_loss', epoch_loss_avg.result())
+
+                print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '
+                      'Training Accuracy:{4:.4f}'.format(ep,
+                                                         args.epochs,
+                                                         global_step.numpy(),
+                                                         epoch_loss_avg.result(),
+                                                         epoch_accuracy.result()))
+                train_log['iter'].append(global_step.numpy())
+                train_log['loss'].append(epoch_loss_avg.result())
+                train_log['accuracy'].append(epoch_accuracy.result())
+            if global_step.numpy() % args.eval_interval == 0:
+                test_loss, test_acc = test(model, test_dataset)
+                test_log['iter'].append(global_step.numpy())
+                test_log['loss'].append(test_loss)
+                test_log['accuracy'].append(test_acc)
+
+
 
     AP, mAP = util.eval_dataset_map(model, test_dataset)
+    # For visualization
+    tf.contrib.summary.scalar('testing_map', mAP)
+
+
     rand_AP = util.compute_ap(
         test_labels, np.random.random(test_labels.shape),
         test_weights, average=None)
