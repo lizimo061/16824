@@ -75,6 +75,8 @@ def load_pascal(data_dir, class_names, split='train'):
                 if image_label == '0':
                     weights[i,j] = 0
 
+        if i > 50:
+            break
     return images, labels, weights
 
 
