@@ -130,8 +130,7 @@ def main():
             loss_value, grads = util.cal_grad(model,
                                               loss_func=tf.losses.sparse_softmax_cross_entropy,
                                               inputs=images,
-                                              targets=labels,
-                                              weights=weights)
+                                              targets=labels)
             optimizer.apply_gradients(zip(grads,
                                           model.trainable_variables),
                                       global_step)
