@@ -127,6 +127,8 @@ def main():
 
         for batch, (images, labels, weights) in enumerate(train_dataset):
             # Augmentation here ???
+            print labels.shape
+
             loss_value, grads = util.cal_grad(model,
                                               loss_func=tf.losses.softmax_cross_entropy,
                                               inputs=images,
@@ -135,6 +137,7 @@ def main():
                                           model.trainable_variables),
                                       global_step)
             epoch_loss_avg(loss_value)
+            print "prediction size", size(model(images))
             epoch_accuracy(tf.argmax(model(images),
                                      axis=1,
                                      output_type=tf.int32),
