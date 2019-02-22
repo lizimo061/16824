@@ -8,6 +8,7 @@ from datetime import datetime
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
+from tensorflow.contrib import eager as tfe
 from tensorflow.keras import layers
 
 import util
@@ -81,7 +82,7 @@ def main():
 
     train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
                                                                  class_names=CLASS_NAMES,
-                                                                 split='trainval')
+                                                                 split='testval')
     test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
                                                               class_names=CLASS_NAMES,
                                                               split='test')

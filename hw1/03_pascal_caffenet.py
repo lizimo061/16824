@@ -21,22 +21,38 @@ class SimpleCNN(keras.Model):
     def __init__(self, num_classes=10):
         super(SimpleCNN, self).__init__(name='SimpleCNN')
         self.num_classes = num_classes
-        self.conv1 = layers.Conv2D(filters=32,
+        self.conv1 = layers.Conv2D(filters=96,
+                                   kernel_size=[11, 11],
+                                   strides=4,
+                                   padding="valid",
+                                   activation='relu')
+        self.pool1 = layers.MaxPool2D(pool_size=(3, 3),strides=2)
+        self.conv2 = layers.Conv2D(filters=256,
                                    kernel_size=[5, 5],
                                    padding="same",
                                    activation='relu')
-        self.pool1 = layers.MaxPool2D(pool_size=(2, 2))
-        self.conv2 = layers.Conv2D(filters=64,
-                                   kernel_size=[5, 5],
+        self.pool2 = layers.MaxPool2D(pool_size=(3, 3),strides=2)
+        self.conv3 = layers.Conv2D(filters=384,
+                                   kernel_size=[3, 3],
                                    padding="same",
                                    activation='relu')
-        self.pool2 = layers.MaxPool2D(pool_size=(2, 2))
-
+        self.conv4 = layers.Conv2D(filters=384,
+                                   kernel_size=[3, 3],
+                                   padding="same",
+                                   activation='relu')
+        self.conv2 = layers.Conv2D(filters=256,
+                                   kernel_size=[3, 3],
+                                   padding="same",
+                                   activation='relu')
+        self.pool3 = layers.MaxPool2D(pool_size=(3, 3),strides=2)
         self.flat = layers.Flatten()
 
-        self.dense1 = layers.Dense(1024, activation='relu')
-        self.dropout = layers.Dropout(rate=0.4)
-        self.dense2 = layers.Dense(num_classes)
+        self.dense1 = layers.Dense(4096, activation='relu')
+        self.dropout1 = layers.Dropout(rate=0.5)
+        self.dense2 = layers.Dense(496, activation='relu')
+        self.dropout2 = layers.Dropout(rate=0.5)
+
+        self.dense3 = layers.Dense(num_classes, activation='softmax')
 
     def call(self, inputs, training=False):
         x = self.conv1(inputs)
@@ -45,8 +61,11 @@ class SimpleCNN(keras.Model):
         x = self.pool2(x)
         flat_x = self.flat(x)
         out = self.dense1(flat_x)
-        out = self.dropout(out, training=training)
+        out = self.dropout1(out, training=training)
         out = self.dense2(out)
+        out = self.dropout2(out)
+        out = self.dense3(out)
+
         return out
 
     def compute_output_shape(self, input_shape):
@@ -57,7 +76,7 @@ class SimpleCNN(keras.Model):
 
 def main():
     parser = argparse.ArgumentParser(description='TensorFlow Pascal Example')
-    parser.add_argument('--batch-size', type=int, default=10,
+    parser.add_argument('--batch-size', type=int, default=20,
                         help='input batch size for training')
     parser.add_argument('--epochs', type=int, default=5,
                         help='number of epochs to train')
@@ -116,7 +135,7 @@ def main():
 
     ## TODO write the training and testing code for multi-label classification
     global_step = tf.train.get_or_create_global_step()
-    optimizer = tf.train.AdamOptimizer(learning_rate=args.lr)
+    optimizer = tf.train.MomentumOptimizer(learning_rate=args.lr, momentum=0.9)
     train_log = {'iter': [], 'loss': [], 'accuracy': []}
     test_log = {'iter': [], 'loss': [], 'accuracy': []}
 
