@@ -120,7 +120,7 @@ def main():
     train_log = {'iter': [], 'loss': [], 'accuracy': []}
     test_log = {'iter': [], 'loss': [], 'accuracy': []}
 
-    for ep in range(args.epochs):
+    for ep in range(args.epoch):
         epoch_loss_avg = tfe.metrics.Mean()
         epoch_accuracy = tfe.metrics.Accuracy()
 
