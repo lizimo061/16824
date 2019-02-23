@@ -146,7 +146,7 @@ def main():
     logdir = os.path.join(args.log_dir,
                           datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
-    checkpoint_dir = ps.path.join(logdir, ckpt)
+    checkpoint_dir = os.path.join(logdir, "ckpt")
 
     if os.path.exists(logdir):
         shutil.rmtree(logdir)
@@ -176,7 +176,7 @@ def main():
                                           model.trainable_variables),
                                       global_step)
             epoch_loss_avg(loss_value)
-
+        
             # Tensorboard visualization
             with tf.contrib.summary.record_summaries_every_n_global_steps(250):
                 tf.contrib.summary.scalar('training_loss_batch', loss_value)
@@ -189,7 +189,7 @@ def main():
                 #tf.contrib.summary.histogram('gradients', grads)
                 for grad,var in zip(gradients,model.trainable_variables):
                     tf.contrib.summary.histogram("gradients_{0}".format(var.name), grad) #???
-
+        
 
             if global_step.numpy() % args.log_interval == 0:
 
