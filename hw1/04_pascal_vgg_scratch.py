@@ -22,11 +22,12 @@ class SimpleCNN(keras.Model):
     def __init__(self, num_classes=10):
         super(SimpleCNN, self).__init__(name='SimpleCNN')
         self.num_classes = num_classes
-        self.conv1_1 = layers.Conv2D(filters=64,
-                                   kernel_size=[3, 3],
-                                   padding="same",
-                                   activation='relu',
-                                   kernel_regularizer=tf.keras.regularizers.l2(0.00001))
+        self.conv1_1 = layers.Conv2D(input_shape=(224,224,3),
+                                     filters=64,
+                                     kernel_size=[3, 3],
+                                     padding="same",
+                                     activation='relu',
+                                     kernel_regularizer=tf.keras.regularizers.l2(0.00001))
         self.conv1_2 = layers.Conv2D(filters=64,
                                    kernel_size=[3, 3],
                                    padding="same",
@@ -154,7 +155,7 @@ def test(dataset,model):
         logits = model(images)
         loss_value = tf.losses.sigmoid_cross_entropy(labels, logits, weights=weights)
         loss_value = loss_func(labels, logits, weights)
-        tess_loss(loss_value)
+        test_loss(loss_value)
 
     return test_loss.result()
 
@@ -181,6 +182,7 @@ def main():
     args = parser.parse_args()
     util.set_random_seed(args.seed)
     sess = util.set_session()
+    img_save_interval = 200
 
     train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
                                                                  class_names=CLASS_NAMES,
@@ -258,9 +260,8 @@ def main():
                 # Tensorboard Visualization
                 with tf.contrib.summary.always_record_summaries():
                     tf.contrib.summary.scalar('training_loss', epoch_loss_avg.result())
-                    tf.contrib.summary.image('training_img', images)
-                    tf.contrib.summary.scalar('learning_rate', learning_rate)
-                    for grad,var in zip(gradients,model.trainable_variables):
+                    tf.contrib.summary.scalar('learning_rate', learning_rate())
+                    for grad,var in zip(grads,model.trainable_variables):
                         tf.contrib.summary.histogram("gradients_{0}".format(var.name), grad)
 
             if global_step.numpy() % args.eval_interval == 0:
@@ -269,6 +270,10 @@ def main():
                     tf.contrib.summary.scalar('test_map', test_mAP)
                     test_loss = test(test_dataset,model)
                     tf.contrib.summary.scalar('testing_loss', test_loss)
+
+            if global_step.numpy() % img_save_interval == 0:
+                with tf.contrib.summary.always_record_summaries():
+                    tf.contrib.summary.image('training_img', images)
     # Save checkpoints
     checkpoint.save(file_prefix=checkpoint_dir)
     AP, mAP = util.eval_dataset_map(model, test_dataset)
