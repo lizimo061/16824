@@ -181,20 +181,6 @@ def main():
                                       global_step)
             epoch_loss_avg(loss_value)
 
-            # Tensorboard visualization
-            with tf.contrib.summary.record_summaries_every_n_global_steps(250):
-                tf.contrib.summary.scalar('training_loss_batch', loss_value)
-                test_AP, test_mAP = util.eval_dataset_map(model, test_dataset)
-                tf.contrib.summary.scalar('test_map', test_mAP)
-                tf.contrib.summary.scalar('learning_rate', learning_rate)
-                tf.contrib.summary.image('training_img', images)
-                test_loss = test(test_dataset,model)
-                tf.contrib.summary.scalar('testing_loss_batch', test_loss)
-                #tf.contrib.summary.histogram('gradients', grads)
-                for grad,var in zip(gradients,model.trainable_variables):
-                    tf.contrib.summary.histogram("gradients_{0}".format(var.name), grad) #???
-
-
             if global_step.numpy() % args.log_interval == 0:
 
                 print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '.format(ep,
@@ -206,9 +192,20 @@ def main():
 
                 # Tensorboard Visualization
                 with tf.contrib.summary.always_record_summaries():
-                    tf.contrib.summary.scalar('training_loss_epoch', epoch_loss_avg.result())
+                    tf.contrib.summary.scalar('training_loss', epoch_loss_avg.result())
+                    tf.contrib.summary.image('training_img', images)
+                    tf.contrib.summary.scalar('learning_rate', learning_rate)
+                    for grad,var in zip(gradients,model.trainable_variables):
+                        tf.contrib.summary.histogram("gradients_{0}".format(var.name), grad)
                 # Save checkpoints
                 checkpoint.save(file_prefix=checkpoint_dir)
+
+            if global_step.numpy() % args.eval_interval == 0:
+                with tf.contrib.summary.always_record_summaries():
+                    test_AP, test_mAP = util.eval_dataset_map(model, test_dataset)
+                    tf.contrib.summary.scalar('test_map', test_mAP)
+                    test_loss = test(test_dataset,model)
+                    tf.contrib.summary.scalar('testing_loss', test_loss)
 
     AP, mAP = util.eval_dataset_map(model, test_dataset)
     # For visualization
