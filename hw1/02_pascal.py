@@ -143,7 +143,7 @@ def main():
             #debug = model(images)
             #print('labels shape {}'.format(labels.shape))
             #print('prediction shape {}'.format(debug.shape))
-            with tf.contrib.summary.record_summaries_every_n_global_steps(10):
+            with tf.contrib.summary.always_record_summaries():
                 tf.contrib.summary.scalar('training_loss_batch', loss_value)
 
             if global_step.numpy() % args.log_interval == 0:
@@ -151,19 +151,18 @@ def main():
 
                 #tf.contrib.summary.scalar('training_loss', epoch_loss_avg.result())
 
-                train_AP, train_mAP = utils.eval_dataset_map(model, train_dataset)
-                print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  Training mAP:{4:.4f}'.format(ep,
+                #train_AP, train_mAP = util.eval_dataset_map(model, train_dataset)
+                print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}'.format(ep,
                                                          args.epochs,
                                                          global_step.numpy(),
-                                                         epoch_loss_avg.result(),
-                                                         train_mAP))
+                                                         epoch_loss_avg.result()))
                 train_log['iter'].append(global_step.numpy())
                 train_log['loss'].append(epoch_loss_avg.result())
-                train_log['accuracy'].append(train_mAP)
+                #train_log['accuracy'].append(train_mAP)
 
                 with tf.contrib.summary.always_record_summaries():
                     tf.contrib.summary.scalar('training_loss_epoch', epoch_loss_avg.result())
-                    tf.contrib.summary.scalar('training_map', train_mAP)
+                    #tf.contrib.summary.scalar('training_map', train_mAP)
 
 
 
