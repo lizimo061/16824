@@ -49,7 +49,7 @@ def load_pascal(data_dir, class_names, split='train'):
     image_list = open(os.path.join(imgset_dir, split+".txt"), "r").read()
     image_name = image_list.split('\n')[:-1]
     image_num = len(image_name)
-    image_num = 300    
+    image_num = 300
     images = np.empty((image_num,img_h,img_w,3), dtype=np.float32)
     labels = np.empty((image_num,20), dtype=np.int32)
     weights = np.empty((image_num,20), dtype=np.int32)
@@ -102,7 +102,7 @@ def cal_grad(model, loss_func, inputs, targets, weights=1.0):
     """
 
     with tf.GradientTape() as tape:
-        logits = model(inputs)
+        logits = model(inputs, True)
         loss_value = loss_func(targets, logits, weights)
     return loss_value, tape.gradient(loss_value, model.trainable_variables)
 

@@ -41,7 +41,7 @@ class SimpleCNN(keras.Model):
                                    kernel_size=[3, 3],
                                    padding="same",
                                    activation='relu')
-        self.conv2 = layers.Conv2D(filters=256,
+        self.conv5 = layers.Conv2D(filters=256,
                                    kernel_size=[3, 3],
                                    padding="same",
                                    activation='relu')
@@ -60,6 +60,10 @@ class SimpleCNN(keras.Model):
         x = self.pool1(x)
         x = self.conv2(x)
         x = self.pool2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = self.conv5(x)
+        x = self.pool3(x)
         flat_x = self.flat(x)
         out = self.dense1(flat_x)
         out = self.dropout1(out,training=training)
@@ -74,16 +78,16 @@ class SimpleCNN(keras.Model):
         shape = [shape[0], self.num_classes]
         return tf.TensorShape(shape)
 
-def test(dataset,model,loss_func):
-    total_loss = 0
-    samples = 0
-    for (images, labels, weights) in dataset:
-        samples += images.shape[0]
-        logits = model(images)
-        loss_value = loss_func(labels, logits, weights)
-        total_loss += loss_value*images.shape[0]
+def test(dataset,model):
+    test_loss = tfe.metrics.Mean()
 
-    return total_loss/samples
+    for batch, (images, labels, weights) in enumerate(dataset):
+        logits = model(images)
+        loss_value = tf.losses.sigmoid_cross_entropy(labels, logits, weights=weights)
+        loss_value = loss_func(labels, logits, weights)
+        tess_loss(loss_value)
+
+    return test_loss.result()
 
 
 
@@ -176,7 +180,7 @@ def main():
                                           model.trainable_variables),
                                       global_step)
             epoch_loss_avg(loss_value)
-        
+
             # Tensorboard visualization
             with tf.contrib.summary.record_summaries_every_n_global_steps(250):
                 tf.contrib.summary.scalar('training_loss_batch', loss_value)
@@ -184,12 +188,12 @@ def main():
                 tf.contrib.summary.scalar('test_map', test_mAP)
                 tf.contrib.summary.scalar('learning_rate', learning_rate)
                 tf.contrib.summary.image('training_img', images)
-                test_loss = test(test_dataset,model,loss_func)
+                test_loss = test(test_dataset,model)
                 tf.contrib.summary.scalar('testing_loss_batch', test_loss)
                 #tf.contrib.summary.histogram('gradients', grads)
                 for grad,var in zip(gradients,model.trainable_variables):
                     tf.contrib.summary.histogram("gradients_{0}".format(var.name), grad) #???
-        
+
 
             if global_step.numpy() % args.log_interval == 0:
 
