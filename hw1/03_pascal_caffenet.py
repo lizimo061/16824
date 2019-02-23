@@ -170,9 +170,12 @@ def main():
                 tf.contrib.summary.scalar('training_loss_batch', loss_value)
                 test_AP, test_mAP = util.eval_dataset_map(model, test_dataset)
                 tf.contrib.summary.scalar('test_map', test_mAP)
-                tf.contrib.summary.scalar('learning_rate', learning_rate) #???
-                tf.contrib.summary.histogram('gradients', grads)
+                tf.contrib.summary.scalar('learning_rate', learning_rate)
                 tf.contrib.summary.image('training_img', images)
+
+                #tf.contrib.summary.histogram('gradients', grads)
+                for grad,var in zip(gradients,model.trainable_variables):
+                    tf.contrib.summary.histogram("gradients_{0}".format(var.name), grad) #???
 
 
             if global_step.numpy() % args.log_interval == 0:
