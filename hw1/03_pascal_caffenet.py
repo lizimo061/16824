@@ -84,7 +84,6 @@ def test(dataset,model):
     for batch, (images, labels, weights) in enumerate(dataset):
         logits = model(images)
         loss_value = tf.losses.sigmoid_cross_entropy(labels, logits, weights=weights)
-        loss_value = loss_func(labels, logits, weights)
         tess_loss(loss_value)
 
     return test_loss.result()

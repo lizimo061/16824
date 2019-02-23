@@ -25,7 +25,8 @@ class SimpleCNN(keras.Model):
         self.conv1_1 = layers.Conv2D(filters=64,
                                    kernel_size=[3, 3],
                                    padding="same",
-                                   activation='relu')
+                                   activation='relu',
+                                   kernel_regularizer=)
         self.conv1_2 = layers.Conv2D(filters=64,
                                    kernel_size=[3, 3],
                                    padding="same",
@@ -134,6 +135,16 @@ class SimpleCNN(keras.Model):
         shape = [shape[0], self.num_classes]
         return tf.TensorShape(shape)
 
+def test(dataset,model):
+    test_loss = tfe.metrics.Mean()
+
+    for batch, (images, labels, weights) in enumerate(dataset):
+        logits = model(images)
+        loss_value = tf.losses.sigmoid_cross_entropy(labels, logits, weights=weights)
+        loss_value = loss_func(labels, logits, weights)
+        tess_loss(loss_value)
+
+    return test_loss.result()
 
 def main():
     parser = argparse.ArgumentParser(description='TensorFlow Pascal Example')
@@ -164,9 +175,10 @@ def main():
                                                                  split='trainval')
     test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
                                                               class_names=CLASS_NAMES,
-                                                              split='test')
+                                                              split='test')                                                             split='test')
 
     ## TODO modify the following code to apply data augmentation here
+    print "======== Loading done ========"
     ori_h = train_images.shape[1]
     ori_w = train_images.shape[2]
     crop_h = 224
@@ -192,7 +204,7 @@ def main():
     logdir = os.path.join(args.log_dir,
                           datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
-    checkpoint_dir = ps.path.join(logdir, ckpt)
+    checkpoint_dir = os.path.join(logdir, "ckpt")
     if os.path.exists(logdir):
         shutil.rmtree(logdir)
     os.makedirs(logdir)
@@ -222,12 +234,6 @@ def main():
                                       global_step)
             epoch_loss_avg(loss_value)
 
-            # Tensorboard visualization
-            with tf.contrib.summary.record_summaries_every_n_global_steps(250):
-                tf.contrib.summary.scalar('training_loss_batch', loss_value)
-                test_AP, test_mAP = util.eval_dataset_map(model, test_dataset)
-                tf.contrib.summary.scalar('test_map', test_mAP)
-
             if global_step.numpy() % args.log_interval == 0:
 
                 print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '.format(ep,
@@ -239,16 +245,21 @@ def main():
 
                 # Tensorboard Visualization
                 with tf.contrib.summary.always_record_summaries():
-                    tf.contrib.summary.scalar('training_loss_epoch', epoch_loss_avg.result())
+                    tf.contrib.summary.scalar('training_loss', epoch_loss_avg.result())
+                    tf.contrib.summary.image('training_img', images)
+                    tf.contrib.summary.scalar('learning_rate', learning_rate)
+                    for grad,var in zip(gradients,model.trainable_variables):
+                        tf.contrib.summary.histogram("gradients_{0}".format(var.name), grad)
 
-
-
+            if global_step.numpy() % args.eval_interval == 0:
+                with tf.contrib.summary.always_record_summaries():
+                    test_AP, test_mAP = util.eval_dataset_map(model, test_dataset)
+                    tf.contrib.summary.scalar('test_map', test_mAP)
+                    test_loss = test(test_dataset,model)
+                    tf.contrib.summary.scalar('testing_loss', test_loss)
     # Save checkpoints
     checkpoint.save(file_prefix=checkpoint_dir)
     AP, mAP = util.eval_dataset_map(model, test_dataset)
-    # For visualization
-    tf.contrib.summary.scalar('testing_map', mAP)
-
 
     rand_AP = util.compute_ap(
         test_labels, np.random.random(test_labels.shape),
