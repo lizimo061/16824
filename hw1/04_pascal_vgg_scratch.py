@@ -94,17 +94,39 @@ class SimpleCNN(keras.Model):
         self.dropout1 = layers.Dropout(rate=0.5)
         self.dense2 = layers.Dense(4096, activation='relu')
         self.dropout2 = layers.Dropout(rate=0.5)
-        self.dense3 = layers.Dense(num_classes, activation='softmax')
+        self.dense3 = layers.Dense(num_classes)
 
     def call(self, inputs, training=False):
-        x = self.conv1(inputs)
+        x = self.conv1_1(inputs)
+        x = self.conv1_2(x)
         x = self.pool1(x)
-        x = self.conv2(x)
+
+        x = self.conv2_1(x)
+        x = self.conv2_2(x)
         x = self.pool2(x)
+
+        x = self.conv3_1(x)
+        x = self.conv3_2(x)
+        x = self.cnov3_3(x)
+        x = self.pool3(x)
+
+        x = self.conv4_1(x)
+        x = self.conv4_2(x)
+        x = self.cnov4_3(x)
+        x = self.pool4(x)
+
+        x = self.conv5_1(x)
+        x = self.conv5_2(x)
+        x = self.cnov5_3(x)
+        x = self.pool5(x)
+
         flat_x = self.flat(x)
         out = self.dense1(flat_x)
         out = self.dropout(out, training=training)
         out = self.dense2(out)
+        out = self.dropout(out, training=training)
+        out = self.dense3(out)
+
         return out
 
     def compute_output_shape(self, input_shape):
@@ -115,7 +137,7 @@ class SimpleCNN(keras.Model):
 
 def main():
     parser = argparse.ArgumentParser(description='TensorFlow Pascal Example')
-    parser.add_argument('--batch-size', type=int, default=10,
+    parser.add_argument('--batch-size', type=int, default=20,
                         help='input batch size for training')
     parser.add_argument('--epochs', type=int, default=5,
                         help='number of epochs to train')
@@ -145,27 +167,32 @@ def main():
                                                               split='test')
 
     ## TODO modify the following code to apply data augmentation here
-    # train_images_aug_flip = train_images.map(lambda img: tf.image.random_flip_left_right(img))
-    # test_images_aug_flip = test_images.map(lambda img: tf.image.random_flip_left_right(img))
-    #
-    # np.append(train_images, train_images_aug_flip, axis=0)
-    # np.append(train_labels, train_labels, axis=0)
-    # np.append(train_weights, train_weights, axis=0)
-    #
-    # np.append(test_images, test_images_aug_flip, axis=0)
-    # np.append(test_labels, test_labels, axis=0)
-    # np.append(test_weights, test_weights, axis=0)
-
+    ori_h = train_images.shape[1]
+    ori_w = train_images.shape[2]
+    crop_h = 224
+    crop_w = 224
+    central_fraction = 0.7
 
     train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels, train_weights))
-    train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
     test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
-    test_dataset = test_dataset.batch(args.batch_size)
 
-    model = SimpleCNN(num_classes=len(CLASS_NAMES))
+    train_dataset_aug_flip = train_dataset.map(lambda img,l,w: (tf.image.random_flip_left_right(img),l,w))
+    train_dataset_aug_crop = train_dataset_aug_flip.map(lambda img,l,w: (tf.random_crop(img,[crop_h,crop_w,3]),l,w))
+
+    train_dataset.concatenate(train_dataset_aug_flip)
+
+    test_dataset_aug = test_dataset.map(lambda img,l,w: (tf.image.central_crop(img, central_fraction),l,w))
+    test_dataset_aug = test_dataset_aug.map(lambda img,l,w: (tf.image.resize_images(img,(ori_h,ori_w)),l,w))
+
+    test_dataset.concatenate(test_dataset_aug)
+
+    train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
+    test_dataset = test_dataset.batch(args.batch_size)
 
     logdir = os.path.join(args.log_dir,
                           datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+
+    checkpoint_dir = ps.path.join(logdir, ckpt)
     if os.path.exists(logdir):
         shutil.rmtree(logdir)
     os.makedirs(logdir)
@@ -174,7 +201,9 @@ def main():
 
     ## TODO write the training and testing code for multi-label classification
     global_step = tf.train.get_or_create_global_step()
-    optimizer = tf.train.AdamOptimizer(learning_rate=args.lr)
+    learning_rate = tf.train.exponential_decay(args.lr, global_step, 5000, 0.5, staircase=True)
+    optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
+    checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
     train_log = {'iter': [], 'loss': [], 'accuracy': []}
     test_log = {'iter': [], 'loss': [], 'accuracy': []}
 
@@ -182,23 +211,24 @@ def main():
         epoch_loss_avg = tfe.metrics.Mean()
 
         for batch, (images, labels, weights) in enumerate(train_dataset):
-            # Augmentation here ???
+
             loss_value, grads = util.cal_grad(model,
-                                              loss_func=tf.losses.softmax_cross_entropy,
+                                              loss_func=tf.losses.sigmoid_cross_entropy,
                                               inputs=images,
+                                              weights=weights,
                                               targets=labels)
             optimizer.apply_gradients(zip(grads,
                                           model.trainable_variables),
                                       global_step)
             epoch_loss_avg(loss_value)
-            #debug = model(images)
-            #print('labels shape {}'.format(labels.shape))
-            #print('prediction shape {}'.format(debug.shape))
 
+            # Tensorboard visualization
+            with tf.contrib.summary.record_summaries_every_n_global_steps(250):
+                tf.contrib.summary.scalar('training_loss_batch', loss_value)
+                test_AP, test_mAP = util.eval_dataset_map(model, test_dataset)
+                tf.contrib.summary.scalar('test_map', test_mAP)
 
             if global_step.numpy() % args.log_interval == 0:
-                # For visualization
-                tf.contrib.summary.scalar('training_loss', epoch_loss_avg.result())
 
                 print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '.format(ep,
                                                          args.epochs,
@@ -207,8 +237,14 @@ def main():
                 train_log['iter'].append(global_step.numpy())
                 train_log['loss'].append(epoch_loss_avg.result())
 
+                # Tensorboard Visualization
+                with tf.contrib.summary.always_record_summaries():
+                    tf.contrib.summary.scalar('training_loss_epoch', epoch_loss_avg.result())
 
 
+
+    # Save checkpoints
+    checkpoint.save(file_prefix=checkpoint_dir)
     AP, mAP = util.eval_dataset_map(model, test_dataset)
     # For visualization
     tf.contrib.summary.scalar('testing_map', mAP)

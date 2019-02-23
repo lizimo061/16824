@@ -145,6 +145,8 @@ def main():
             #print('prediction shape {}'.format(debug.shape))
             with tf.contrib.summary.always_record_summaries():
                 tf.contrib.summary.scalar('training_loss_batch', loss_value)
+                test_AP, test_mAP = util.eval_dataset_map(model, test_dataset)
+                tf.contrib.summary.scalar('test_map', test_mAP)
 
             if global_step.numpy() % args.log_interval == 0:
                 # For visualization
