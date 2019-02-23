@@ -88,29 +88,26 @@ def main():
                                                               split='test')
 
     ## TODO modify the following code to apply data augmentation here
-    train_images_aug_flip = train_images.map(lambda img: tf.image.random_flip_left_right(img))
-
-    np.append(train_images, train_images_aug_flip, axis=0)
-    np.append(train_labels, train_labels, axis=0)
-    np.append(train_weights, train_weights, axis=0)
-
-    ori_h = images.shape[1]
-    ori_w = images.shape[2]
+    ori_h = train_images.shape[1]
+    ori_w = train_images.shape[2]
     crop_h = 224
     crop_w = 224
-
-    train_images = train_images.map(lambda img: tf.random_crop(img,[crop_h,crop_w,3]))
     central_fraction = 0.7
-    test_images_aug = test_images.map(lambda img: tf.image.central_crop(img, central_fraction))
-    test_images_aug = test_images_aug.map(lambda img: tf.image.resize_images(img,(ori_h,ori_w,3)))
-
-    np.append(test_images, train_images_aug, axis=0)
-    np.append(test_labels, test_labels, axis=0)
-    np.append(test_weights, test_weights, axis=0)
 
     train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels, train_weights))
-    train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
     test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
+
+    train_dataset_aug_flip = train_dataset.map(lambda img,label,weight: tf.image.random_flip_left_right(img),label,weight)
+    train_dataset_aug_crop = train_dataset_aug_flip.map(lambda img,label,weight: tf.random_crop(img,[crop_h,crop_w,3]),label,weight)
+
+    train_dataset.concatenate(train_dataset_aug_flip)
+   
+    test_dataset_aug = test_dataset.map(lambda img,label,weight: tf.image.central_crop(img, central_fraction),label,weight)
+    test_dataset_aug = test_dataset_aug.map(lambda img,label,weight: tf.image.resize_images(img,(ori_h,ori_w,3)),label,weight)
+
+    test_dataset.concatenate(test_dataset_aug)
+
+    train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
     test_dataset = test_dataset.batch(args.batch_size)
 
     model = SimpleCNN(num_classes=len(CLASS_NAMES))
