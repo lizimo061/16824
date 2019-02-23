@@ -26,67 +26,79 @@ class SimpleCNN(keras.Model):
                                    kernel_size=[3, 3],
                                    padding="same",
                                    activation='relu',
-                                   kernel_regularizer=)
+                                   kernel_regularizer=tf.keras.regularizers.l2(0.00001))
         self.conv1_2 = layers.Conv2D(filters=64,
                                    kernel_size=[3, 3],
                                    padding="same",
-                                   activation='relu')
+                                   activation='relu',
+                                   kernel_regularizer=tf.keras.regularizers.l2(0.00001))
 
         self.pool1 = layers.MaxPool2D(pool_size=(2, 2),strides=2)
 
         self.conv2_1 = layers.Conv2D(filters=128,
                                    kernel_size=[3, 3],
                                    padding="same",
-                                   activation='relu')
+                                   activation='relu',
+                                   kernel_regularizer=tf.keras.regularizers.l2(0.00001))
         self.conv2_2 = layers.Conv2D(filters=128,
                                    kernel_size=[3, 3],
                                    padding="same",
-                                   activation='relu')
+                                   activation='relu',
+                                   kernel_regularizer=tf.keras.regularizers.l2(0.00001))
 
         self.pool2 = layers.MaxPool2D(pool_size=(2, 2),strides=2)
 
         self.conv3_1 = layers.Conv2D(filters=256,
                                    kernel_size=[3, 3],
                                    padding="same",
-                                   activation='relu')
+                                   activation='relu',
+                                   kernel_regularizer=tf.keras.regularizers.l2(0.00001))
         self.conv3_2 = layers.Conv2D(filters=256,
                                    kernel_size=[3, 3],
                                    padding="same",
-                                   activation='relu')
+                                   activation='relu',
+                                   kernel_regularizer=tf.keras.regularizers.l2(0.00001))
         self.conv3_3 = layers.Conv2D(filters=256,
                                    kernel_size=[3, 3],
                                    padding="same",
-                                   activation='relu')
+                                   activation='relu',
+                                   kernel_regularizer=tf.keras.regularizers.l2(0.00001))
 
         self.pool3 = layers.MaxPool2D(pool_size=(2, 2),strides=2)
 
         self.conv4_1 = layers.Conv2D(filters=512,
                                    kernel_size=[3, 3],
                                    padding="same",
-                                   activation='relu')
+                                   activation='relu',
+                                   kernel_regularizer=tf.keras.regularizers.l2(0.00001))
         self.conv4_2 = layers.Conv2D(filters=512,
                                    kernel_size=[3, 3],
                                    padding="same",
-                                   activation='relu')
+                                   activation='relu',
+                                   kernel_regularizer=tf.keras.regularizers.l2(0.00001))
         self.conv4_3 = layers.Conv2D(filters=512,
                                    kernel_size=[3, 3],
                                    padding="same",
-                                   activation='relu')
+                                   activation='relu',
+                                   kernel_regularizer=tf.keras.regularizers.l2(0.00001))
 
         self.pool4 = layers.MaxPool2D(pool_size=(2, 2),strides=2)
 
         self.conv5_1 = layers.Conv2D(filters=512,
                                    kernel_size=[3, 3],
                                    padding="same",
-                                   activation='relu')
+                                   activation='relu',
+                                   kernel_regularizer=tf.keras.regularizers.l2(0.00001))
         self.conv5_2 = layers.Conv2D(filters=512,
                                    kernel_size=[3, 3],
                                    padding="same",
-                                   activation='relu')
+                                   activation='relu',
+                                   kernel_regularizer=tf.keras.regularizers.l2(0.00001))
         self.conv5_3 = layers.Conv2D(filters=512,
                                    kernel_size=[3, 3],
                                    padding="same",
-                                   activation='relu')
+                                   activation='relu',
+                                   kernel_regularizer=tf.keras.regularizers.l2(0.00001))
 
         self.pool5 = layers.MaxPool2D(pool_size=(2, 2),strides=2)
         self.flat = layers.Flatten()
