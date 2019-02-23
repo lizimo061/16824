@@ -194,8 +194,8 @@ def main():
                 with tf.contrib.summary.always_record_summaries():
                     tf.contrib.summary.scalar('training_loss', epoch_loss_avg.result())
                     tf.contrib.summary.image('training_img', images)
-                    tf.contrib.summary.scalar('learning_rate', learning_rate)
-                    for grad,var in zip(gradients,model.trainable_variables):
+                    tf.contrib.summary.scalar('learning_rate', learning_rate())
+                    for grad,var in zip(grads,model.trainable_variables):
                         tf.contrib.summary.histogram("gradients_{0}".format(var.name), grad)
                 # Save checkpoints
                 checkpoint.save(file_prefix=checkpoint_dir)
