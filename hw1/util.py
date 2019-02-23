@@ -52,7 +52,7 @@ def load_pascal(data_dir, class_names, split='train'):
     images = np.empty((image_num,img_h,img_w,3), dtype=np.float32)
     labels = np.empty((image_num,20), dtype=np.int32)
     weights = np.empty((image_num,20), dtype=np.int32)
-    image_num = 20
+
     for i in xrange(image_num):
         # Resize image
         image = Image.open(os.path.join(img_dir, image_name[i]+".jpg"))

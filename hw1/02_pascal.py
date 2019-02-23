@@ -119,6 +119,7 @@ def main():
     os.makedirs(logdir)
     writer = tf.contrib.summary.create_file_writer(logdir)
     writer.set_as_default()
+    tf.contrib.summary.always_record_summaries()
 
     ## TODO write the training and testing code for multi-label classification
     global_step = tf.train.get_or_create_global_step()
