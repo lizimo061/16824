@@ -49,36 +49,41 @@ def load_pascal(data_dir, class_names, split='train'):
     image_list = open(os.path.join(imgset_dir, split+".txt"), "r").read()
     image_name = image_list.split('\n')[:-1]
     image_num = len(image_name)
-
-    images = np.zeros((image_num,img_h,img_w,3), dtype=np.float32)
-    labels = np.zeros((image_num,20), dtype=np.int32)
-    weights = np.zeros((image_num,20), dtype=np.int32)
+    images = np.empty((image_num,img_h,img_w,3), dtype=np.float32)
+    labels = np.empty((image_num,20), dtype=np.int32)
+    weights = np.empty((image_num,20), dtype=np.int32)
 
     for i in xrange(image_num):
         # Resize image
         image = Image.open(os.path.join(img_dir, image_name[i]+".jpg"))
-        print os.path.join(img_dir, image_name[i]+".jpg")
+        # print os.path.join(img_dir, image_name[i]+".jpg")
         image = image.resize((img_h,img_w))
         image_np = np.array(image)
         images[i,:,:,:] = image_np[np.newaxis,:,:,:]
 
         for j,each_class in enumerate(class_names):
+
             class_file = os.path.join(imgset_dir, each_class+"_"+split+".txt")
             class_data = np.loadtxt(class_file, dtype=str)
             image_loc = np.where(class_data == image_name[i])
             image_label = class_data[np.asscalar(image_loc[0])][1]
-
-            if image_label == '1':
+            if image_label == "1":
                 labels[i,j] = 1
                 weights[i,j] = 1
-            else:
+            elif image_label == "-1":
                 labels[i,j] = 0
                 weights[i,j] = 1
-                if image_label == '0':
-                    weights[i,j] = 0
+            elif image_label == "0":
+                labels[i,j] = 0
+                weights[i,j] = 0
 
-        if i > 50:
-            break
+
+    ''' DEBUG '''
+    #np.set_printoptions(threshold=np.nan)
+    #for i in range(10):
+    #    print 'label ',labels[i,:]
+    #    print 'weights ', weights[i,:] 
+
     return images, labels, weights
 
 
@@ -143,17 +148,22 @@ def eval_dataset_map(model, dataset):
     valid = []
     for batch, (images, labels, weights) in enumerate(dataset):
         predictions = model(images)
-        for i, logits in enumerate(preictions):
+        for i, logits in enumerate(predictions):
             p = tf.nn.softmax(logits)
-            gt.append(p)
-            pred.append(labels[i,:])
-            valid.append(weights[i,:])
+            pred.append(np.array(p))
+            gt.append(np.array(labels[i,:]))
+            valid.append(np.array(weights[i,:]))
+    
     gt = np.array(gt)
     pred = np.array(pred)
     valid = np.array(valid)
 
-    AP = compute_ap(gt, pred, valid)
-    mAP = AP/float(gt.shape[1])
+    np.set_printoptions(threshold=np.nan)
+    print "gt", gt.shape
+    print "pred", pred.shape
+    print "valid", valid.shape
+    AP = compute_ap(gt, pred, valid, average=None)
+    mAP = sum(AP)/len(AP)
     ## TODO implement the code here
 
     return AP, mAP
