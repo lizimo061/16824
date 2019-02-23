@@ -82,7 +82,7 @@ def load_pascal(data_dir, class_names, split='train'):
     #np.set_printoptions(threshold=np.nan)
     #for i in range(10):
     #    print 'label ',labels[i,:]
-    #    print 'weights ', weights[i,:] 
+    #    print 'weights ', weights[i,:]
 
     return images, labels, weights
 
@@ -149,11 +149,11 @@ def eval_dataset_map(model, dataset):
     for batch, (images, labels, weights) in enumerate(dataset):
         predictions = model(images)
         for i, logits in enumerate(predictions):
-            p = tf.nn.softmax(logits)
+            p = tf.nn.sigmoid(logits)
             pred.append(np.array(p))
             gt.append(np.array(labels[i,:]))
             valid.append(np.array(weights[i,:]))
-    
+
     gt = np.array(gt)
     pred = np.array(pred)
     valid = np.array(valid)

@@ -53,7 +53,7 @@ class SimpleCNN(keras.Model):
         self.dense2 = layers.Dense(4096, activation='relu')
         self.dropout2 = layers.Dropout(rate=0.5)
 
-        self.dense3 = layers.Dense(num_classes, activation='softmax')
+        self.dense3 = layers.Dense(num_classes)
 
     def call(self, inputs, training=False):
         x = self.conv1(inputs)
@@ -62,9 +62,9 @@ class SimpleCNN(keras.Model):
         x = self.pool2(x)
         flat_x = self.flat(x)
         out = self.dense1(flat_x)
-        out = self.dropout1(out, training=training)
+        out = self.dropout1(out,training=training)
         out = self.dense2(out)
-        out = self.dropout2(out)
+        out = self.dropout2(out,training=training)
         out = self.dense3(out)
 
         return out
@@ -150,7 +150,7 @@ def main():
         epoch_loss_avg = tfe.metrics.Mean()
 
         for batch, (images, labels, weights) in enumerate(train_dataset):
-            # Augmentation here ???
+            
             loss_value, grads = util.cal_grad(model,
                                               loss_func=tf.losses.sigmoid_cross_entropy,
                                               inputs=images,

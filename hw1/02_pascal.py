@@ -101,7 +101,7 @@ def main():
     train_dataset_aug_crop = train_dataset_aug_flip.map(lambda img,l,w: (tf.random_crop(img,[crop_h,crop_w,3]),l,w))
 
     train_dataset.concatenate(train_dataset_aug_flip)
-   
+
     test_dataset_aug = test_dataset.map(lambda img,l,w: (tf.image.central_crop(img, central_fraction),l,w))
     test_dataset_aug = test_dataset_aug.map(lambda img,l,w: (tf.image.resize_images(img,(ori_h,ori_w)),l,w))
 
@@ -119,7 +119,6 @@ def main():
     os.makedirs(logdir)
     writer = tf.contrib.summary.create_file_writer(logdir)
     writer.set_as_default()
-    tf.contrib.summary.always_record_summaries()
 
     ## TODO write the training and testing code for multi-label classification
     global_step = tf.train.get_or_create_global_step()
@@ -131,7 +130,7 @@ def main():
         epoch_loss_avg = tfe.metrics.Mean()
 
         for batch, (images, labels, weights) in enumerate(train_dataset):
-            # Augmentation here ???
+
             loss_value, grads = util.cal_grad(model,
                                               loss_func=tf.losses.sigmoid_cross_entropy,
                                               inputs=images,
@@ -144,24 +143,34 @@ def main():
             #debug = model(images)
             #print('labels shape {}'.format(labels.shape))
             #print('prediction shape {}'.format(debug.shape))
-
+            with tf.contrib.summary.record_summaries_every_n_global_steps(10):
+                tf.contrib.summary.scalar('training_loss_batch', loss_value)
 
             if global_step.numpy() % args.log_interval == 0:
                 # For visualization
-                tf.contrib.summary.scalar('training_loss', epoch_loss_avg.result())
 
-                print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '.format(ep,
+                #tf.contrib.summary.scalar('training_loss', epoch_loss_avg.result())
+
+                train_AP, train_mAP = utils.eval_dataset_map(model, train_dataset)
+                print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  Training mAP:{4:.4f}'.format(ep,
                                                          args.epochs,
                                                          global_step.numpy(),
-                                                         epoch_loss_avg.result()))
+                                                         epoch_loss_avg.result(),
+                                                         train_mAP))
                 train_log['iter'].append(global_step.numpy())
                 train_log['loss'].append(epoch_loss_avg.result())
+                train_log['accuracy'].append(train_mAP)
+
+                with tf.contrib.summary.always_record_summaries():
+                    tf.contrib.summary.scalar('training_loss_epoch', epoch_loss_avg.result())
+                    tf.contrib.summary.scalar('training_map', train_mAP)
 
 
 
     AP, mAP = util.eval_dataset_map(model, test_dataset)
     # For visualization
-    tf.contrib.summary.scalar('testing_map', mAP)
+    # with tf.contrib.summary.always_record_summaries():
+    #     tf.contrib.summary.scalar('testing_map', mAP)
 
 
     rand_AP = util.compute_ap(
