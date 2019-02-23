@@ -97,13 +97,13 @@ def main():
     train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels, train_weights))
     test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
 
-    train_dataset_aug_flip = train_dataset.map(lambda img,label,weight: tf.image.random_flip_left_right(img),label,weight)
-    train_dataset_aug_crop = train_dataset_aug_flip.map(lambda img,label,weight: tf.random_crop(img,[crop_h,crop_w,3]),label,weight)
+    train_dataset_aug_flip = train_dataset.map(lambda img,l,w: (tf.image.random_flip_left_right(img),l,w))
+    train_dataset_aug_crop = train_dataset_aug_flip.map(lambda img,l,w: (tf.random_crop(img,[crop_h,crop_w,3]),l,w))
 
     train_dataset.concatenate(train_dataset_aug_flip)
    
-    test_dataset_aug = test_dataset.map(lambda img,label,weight: tf.image.central_crop(img, central_fraction),label,weight)
-    test_dataset_aug = test_dataset_aug.map(lambda img,label,weight: tf.image.resize_images(img,(ori_h,ori_w,3)),label,weight)
+    test_dataset_aug = test_dataset.map(lambda img,l,w: (tf.image.central_crop(img, central_fraction),l,w))
+    test_dataset_aug = test_dataset_aug.map(lambda img,l,w: (tf.image.resize_images(img,(ori_h,ori_w)),l,w))
 
     test_dataset.concatenate(test_dataset_aug)
 
