@@ -88,17 +88,25 @@ def main():
                                                               split='test')
 
     ## TODO modify the following code to apply data augmentation here
-    # train_images_aug_flip = train_images.map(lambda img: tf.image.random_flip_left_right(img))
-    # test_images_aug_flip = test_images.map(lambda img: tf.image.random_flip_left_right(img))
-    #
-    # np.append(train_images, train_images_aug_flip, axis=0)
-    # np.append(train_labels, train_labels, axis=0)
-    # np.append(train_weights, train_weights, axis=0)
-    #
-    # np.append(test_images, test_images_aug_flip, axis=0)
-    # np.append(test_labels, test_labels, axis=0)
-    # np.append(test_weights, test_weights, axis=0)
+    train_images_aug_flip = train_images.map(lambda img: tf.image.random_flip_left_right(img))
 
+    np.append(train_images, train_images_aug_flip, axis=0)
+    np.append(train_labels, train_labels, axis=0)
+    np.append(train_weights, train_weights, axis=0)
+
+    ori_h = images.shape[1]
+    ori_w = images.shape[2]
+    crop_h = 224
+    crop_w = 224
+
+    train_images = train_images.map(lambda img: tf.random_crop(img,[crop_h,crop_w,3]))
+    central_fraction = 0.7
+    test_images_aug = test_images.map(lambda img: tf.image.central_crop(img, central_fraction))
+    test_images_aug = test_images_aug.map(lambda img: tf.image.resize_images(img,(ori_h,ori_w,3)))
+
+    np.append(test_images, train_images_aug, axis=0)
+    np.append(test_labels, test_labels, axis=0)
+    np.append(test_weights, test_weights, axis=0)
 
     train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels, train_weights))
     train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
@@ -127,8 +135,9 @@ def main():
         for batch, (images, labels, weights) in enumerate(train_dataset):
             # Augmentation here ???
             loss_value, grads = util.cal_grad(model,
-                                              loss_func=tf.losses.softmax_cross_entropy,
+                                              loss_func=tf.losses.sigmoid_cross_entropy,
                                               inputs=images,
+                                              weights=weights,
                                               targets=labels)
             optimizer.apply_gradients(zip(grads,
                                           model.trainable_variables),
