@@ -49,7 +49,7 @@ class SimpleCNN(keras.Model):
 
         self.dense1 = layers.Dense(4096, activation='relu')
         self.dropout1 = layers.Dropout(rate=0.5)
-        self.dense2 = layers.Dense(496, activation='relu')
+        self.dense2 = layers.Dense(4096, activation='relu')
         self.dropout2 = layers.Dropout(rate=0.5)
 
         self.dense3 = layers.Dense(num_classes, activation='softmax')
@@ -139,45 +139,34 @@ def main():
     train_log = {'iter': [], 'loss': [], 'accuracy': []}
     test_log = {'iter': [], 'loss': [], 'accuracy': []}
 
-    for ep in range(args.epoch):
+    for ep in range(args.epochs):
         epoch_loss_avg = tfe.metrics.Mean()
-        epoch_accuracy = tfe.metrics.Accuracy()
 
         for batch, (images, labels, weights) in enumerate(train_dataset):
             # Augmentation here ???
             loss_value, grads = util.cal_grad(model,
-                                              loss_func=tf.losses.sparse_softmax_cross_entropy,
+                                              loss_func=tf.losses.softmax_cross_entropy,
                                               inputs=images,
-                                              targets=labels,
-                                              weights=weights)
+                                              targets=labels)
             optimizer.apply_gradients(zip(grads,
                                           model.trainable_variables),
                                       global_step)
             epoch_loss_avg(loss_value)
-            epoch_accuracy(tf.argmax(model(images),
-                                     axis=1,
-                                     output_type=tf.int32),
-                           labels)
+            #debug = model(images)
+            #print('labels shape {}'.format(labels.shape))
+            #print('prediction shape {}'.format(debug.shape))
+
+
             if global_step.numpy() % args.log_interval == 0:
                 # For visualization
                 tf.contrib.summary.scalar('training_loss', epoch_loss_avg.result())
 
-                print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '
-                      'Training Accuracy:{4:.4f}'.format(ep,
+                print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '.format(ep,
                                                          args.epochs,
                                                          global_step.numpy(),
-                                                         epoch_loss_avg.result(),
-                                                         epoch_accuracy.result()))
+                                                         epoch_loss_avg.result()))
                 train_log['iter'].append(global_step.numpy())
                 train_log['loss'].append(epoch_loss_avg.result())
-                train_log['accuracy'].append(epoch_accuracy.result())
-            if global_step.numpy() % args.eval_interval == 0:
-                test_loss, test_acc = test(model, test_dataset)
-                test_log['iter'].append(global_step.numpy())
-                test_log['loss'].append(test_loss)
-                test_log['accuracy'].append(test_acc)
-
-
 
     AP, mAP = util.eval_dataset_map(model, test_dataset)
     # For visualization
