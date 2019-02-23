@@ -143,7 +143,7 @@ def main():
             #debug = model(images)
             #print('labels shape {}'.format(labels.shape))
             #print('prediction shape {}'.format(debug.shape))
-            with tf.contrib.summary.always_record_summaries():
+            with tf.contrib.summary.record_summaries_every_n_global_steps(500):
                 tf.contrib.summary.scalar('training_loss_batch', loss_value)
                 test_AP, test_mAP = util.eval_dataset_map(model, test_dataset)
                 tf.contrib.summary.scalar('test_map', test_mAP)
