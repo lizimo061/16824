@@ -113,6 +113,7 @@ def main():
     args = parser.parse_args()
     util.set_random_seed(args.seed)
     sess = util.set_session()
+    img_save_interval = 200
 
     train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
                                                                  class_names=CLASS_NAMES,
@@ -192,7 +193,6 @@ def main():
                 # Tensorboard Visualization
                 with tf.contrib.summary.always_record_summaries():
                     tf.contrib.summary.scalar('training_loss', epoch_loss_avg.result())
-                    tf.contrib.summary.image('training_img', images)
                     tf.contrib.summary.scalar('learning_rate', learning_rate())
                     for grad,var in zip(grads,model.trainable_variables):
                         tf.contrib.summary.histogram("gradients_{0}".format(var.name), grad)
@@ -205,6 +205,11 @@ def main():
                     tf.contrib.summary.scalar('test_map', test_mAP)
                     test_loss = test(test_dataset,model)
                     tf.contrib.summary.scalar('testing_loss', test_loss)
+
+            if global_step.numpy() % img_save_interval == 0:
+                with tf.contrib.summary.always_record_summaries():
+                    tf.contrib.summary.image('training_img', images)
+
 
     AP, mAP = util.eval_dataset_map(model, test_dataset)
     # For visualization
