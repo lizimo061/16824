@@ -74,6 +74,18 @@ class SimpleCNN(keras.Model):
         shape = [shape[0], self.num_classes]
         return tf.TensorShape(shape)
 
+def test(dataset,model,loss_func):
+    total_loss = 0
+    samples = 0
+    for (images, labels, weights) in dataset:
+        samples += images.shape[0]
+        logits = model(images)
+        loss_value = loss_func(labels, logits, weights)
+        total_loss += loss_value*images.shape[0]
+
+    return total_loss/samples
+
+
 
 def main():
     parser = argparse.ArgumentParser(description='TensorFlow Pascal Example')
@@ -172,7 +184,8 @@ def main():
                 tf.contrib.summary.scalar('test_map', test_mAP)
                 tf.contrib.summary.scalar('learning_rate', learning_rate)
                 tf.contrib.summary.image('training_img', images)
-
+                test_loss = test(test_dataset,model,loss_func)
+                tf.contrib.summary.scalar('testing_loss_batch', test_loss)
                 #tf.contrib.summary.histogram('gradients', grads)
                 for grad,var in zip(gradients,model.trainable_variables):
                     tf.contrib.summary.histogram("gradients_{0}".format(var.name), grad) #???
