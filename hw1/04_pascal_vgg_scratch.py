@@ -121,24 +121,24 @@ class SimpleCNN(keras.Model):
 
         x = self.conv3_1(x)
         x = self.conv3_2(x)
-        x = self.cnov3_3(x)
+        x = self.conv3_3(x)
         x = self.pool3(x)
 
         x = self.conv4_1(x)
         x = self.conv4_2(x)
-        x = self.cnov4_3(x)
+        x = self.conv4_3(x)
         x = self.pool4(x)
 
         x = self.conv5_1(x)
         x = self.conv5_2(x)
-        x = self.cnov5_3(x)
+        x = self.conv5_3(x)
         x = self.pool5(x)
 
         flat_x = self.flat(x)
         out = self.dense1(flat_x)
-        out = self.dropout(out, training=training)
+        out = self.dropout1(out, training=training)
         out = self.dense2(out)
-        out = self.dropout(out, training=training)
+        out = self.dropout2(out, training=training)
         out = self.dense3(out)
 
         return out
@@ -154,7 +154,6 @@ def test(dataset,model):
     for batch, (images, labels, weights) in enumerate(dataset):
         logits = model(images)
         loss_value = tf.losses.sigmoid_cross_entropy(labels, logits, weights=weights)
-        loss_value = loss_func(labels, logits, weights)
         test_loss(loss_value)
 
     return test_loss.result()
@@ -188,11 +187,9 @@ def main():
                                                                  class_names=CLASS_NAMES,
                                                                  split='trainval')
     test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
-                                                              class_names=CLASS_NAMES,
-                                                              split='test')                                                             split='test')
-
+                                                              class_names=CLASS_NAMES,                                                                             split='test')
     ## TODO modify the following code to apply data augmentation here
-    print "======== Loading done ========"
+    print("======== Loading done ========")
     ori_h = train_images.shape[1]
     ori_w = train_images.shape[2]
     crop_h = 224
@@ -214,6 +211,8 @@ def main():
 
     train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
     test_dataset = test_dataset.batch(args.batch_size)
+    
+    model = SimpleCNN(num_classes=len(CLASS_NAMES))
 
     logdir = os.path.join(args.log_dir,
                           datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
