@@ -108,7 +108,7 @@ class SimpleCNN(keras.Model):
         self.dropout1 = layers.Dropout(rate=0.5)
         self.dense2 = layers.Dense(4096, activation='relu')
         self.dropout2 = layers.Dropout(rate=0.5)
-        self.dense3 = layers.Dense(num_classes)
+        self.dense3 = layers.Dense(1000)
 
     def call(self, inputs, training=False):
         x = self.conv1_1(inputs)
@@ -147,6 +147,9 @@ class SimpleCNN(keras.Model):
         shape = tf.TensorShape(input_shape).as_list()
         shape = [shape[0], self.num_classes]
         return tf.TensorShape(shape)
+    def update_struc(self):
+        self.dense3 = layers.Dense(self.num_classes)
+        self.dense3.build((1,1,4096))
 
 def test(dataset,model):
     test_loss = tfe.metrics.Mean()
@@ -212,20 +215,16 @@ def main():
     train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
     test_dataset = test_dataset.batch(args.batch_size)
 
-    fname = "vgg16_weights_tf_dim_ordering_tf_kernels.h5"
+    fname = "../vgg16_weights_tf_dim_ordering_tf_kernels.h5"
     origin = "https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels.h5"
 
     weights_file = tf.keras.utils.get_file(fname, origin)
 
     model = SimpleCNN(num_classes=len(CLASS_NAMES))
-
+    model.build((args.batch_size,224,224,3))
     model.load_weights(weights_file)
 
-    weights = model.get_weights()
-
-    print weights_file
-
-    return 
+    model.update_struc()
 
     logdir = os.path.join(args.log_dir,
                           datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
@@ -259,6 +258,8 @@ def main():
                                           model.trainable_variables),
                                       global_step)
             epoch_loss_avg(loss_value)
+
+             
 
             if global_step.numpy() % args.log_interval == 0:
 
