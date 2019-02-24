@@ -211,7 +211,7 @@ def main():
 
     train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
     test_dataset = test_dataset.batch(args.batch_size)
-    
+
     model = SimpleCNN(num_classes=len(CLASS_NAMES))
 
     logdir = os.path.join(args.log_dir,
