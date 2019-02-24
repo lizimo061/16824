@@ -49,7 +49,6 @@ def load_pascal(data_dir, class_names, split='train'):
     image_list = open(os.path.join(imgset_dir, split+".txt"), "r").read()
     image_name = image_list.split('\n')[:-1]
     image_num = len(image_name)
-    image_num = 200
     images = np.empty((image_num,img_h,img_w,3), dtype=np.float32)
     labels = np.empty((image_num,20), dtype=np.int32)
     weights = np.empty((image_num,20), dtype=np.int32)
