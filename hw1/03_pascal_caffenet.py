@@ -88,7 +88,18 @@ def test(dataset,model):
 
     return test_loss.result()
 
-
+def img_mean_substract(img):
+    h = img.shape[0]
+    w = img.shape[1]
+    mean_mask = np.empty(img.shape)
+    R = np.full((h,w),123.68)
+    G = np.full((h,w),116.78)
+    B = np.full((h,w),103.94)
+    mean_mask[:,:,0] = R
+    mean_mask[:,:,1] = G
+    mean_mask[:,:,2] = B
+    result = img - mean_mask
+    return result
 
 def main():
     parser = argparse.ArgumentParser(description='TensorFlow Pascal Example')
@@ -141,6 +152,9 @@ def main():
     test_dataset_aug = test_dataset_aug.map(lambda img,l,w: (tf.image.resize_images(img,(ori_h,ori_w)),l,w))
 
     test_dataset.concatenate(test_dataset_aug)
+
+    train_dataset = train_dataset.map(lambda img,l,w:(img_mean_substract(img),l,w))
+    test_dataset = test_dataset.map(lambda img,l,w:(img_mean_substract(img),l,w))
 
     train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
     test_dataset = test_dataset.batch(args.batch_size)
