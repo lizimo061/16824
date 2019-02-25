@@ -238,7 +238,7 @@ def main():
 
     ## TODO write the training and testing code for multi-label classification
     global_step = tf.train.get_or_create_global_step()
-    learning_rate = tf.train.exponential_decay(args.lr, global_step, 5000, 0.5, staircase=True)
+    learning_rate = tf.train.exponential_decay(args.lr, global_step, 1000, 0.5, staircase=True)
     optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
     checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
     train_log = {'iter': [], 'loss': [], 'accuracy': []}
@@ -273,9 +273,9 @@ def main():
                 # Tensorboard Visualization
                 with tf.contrib.summary.always_record_summaries():
                     tf.contrib.summary.scalar('training_loss', epoch_loss_avg.result())
-                    tf.contrib.summary.scalar('learning_rate', learning_rate())
-                    for grad,var in zip(grads,model.trainable_variables):
-                        tf.contrib.summary.histogram("gradients_{0}".format(var.name), grad)
+                    #tf.contrib.summary.scalar('learning_rate', learning_rate())
+                    #for grad,var in zip(grads,model.trainable_variables):
+                    #    tf.contrib.summary.histogram("gradients_{0}".format(var.name), grad)
 
             if global_step.numpy() % args.eval_interval == 0:
                 with tf.contrib.summary.always_record_summaries():
@@ -284,9 +284,9 @@ def main():
                     test_loss = test(test_dataset,model)
                     tf.contrib.summary.scalar('testing_loss', test_loss)
 
-            if global_step.numpy() % img_save_interval == 0:
-                with tf.contrib.summary.always_record_summaries():
-                    tf.contrib.summary.image('training_img', images)
+            #if global_step.numpy() % img_save_interval == 0:
+            #    with tf.contrib.summary.always_record_summaries():
+            #        tf.contrib.summary.image('training_img', images)
     # Save checkpoints
     checkpoint.save(file_prefix=checkpoint_dir)
     AP, mAP = util.eval_dataset_map(model, test_dataset)
