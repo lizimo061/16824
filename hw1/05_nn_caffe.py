@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import argparse
-import os
+import os        
 import shutil
 from datetime import datetime
 
@@ -171,7 +171,7 @@ def main():
 
     model.build((args.batch_size,224,224,3))
     ckpt_path = "./tb/2019-02-23_19-19-32/"
-    
+
     for cp_ind in range(0,60,2):
         status = checkpoint.restore(os.path.join(ckpt_path,"ckpt-"+str(cp_ind)))
         weights = model.get_weights()
