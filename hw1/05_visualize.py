@@ -78,6 +78,9 @@ class SimpleCNN(keras.Model):
         shape = [shape[0], self.num_classes]
         return tf.TensorShape(shape)
 
+    def get_conv_weights(self):
+        return self.conv1.weights
+
 def test(dataset,model):
     test_loss = tfe.metrics.Mean()
 
@@ -116,42 +119,42 @@ def main():
     sess = util.set_session()
     img_save_interval = 200
 
-    train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
-                                                                 class_names=CLASS_NAMES,
-                                                                 split='trainval')
-    test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
-                                                              class_names=CLASS_NAMES,
-                                                              split='test')
+    # train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
+    #                                                              class_names=CLASS_NAMES,
+    #                                                              split='trainval')
+    # test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
+    #                                                           class_names=CLASS_NAMES,
+    #                                                           split='test')
 
     ## TODO modify the following code to apply data augmentation here
-    ori_h = train_images.shape[1]
-    ori_w = train_images.shape[2]
-    crop_h = 224
-    crop_w = 224
-    central_fraction = 0.7
+    # ori_h = train_images.shape[1]
+    # ori_w = train_images.shape[2]
+    # crop_h = 224
+    # crop_w = 224
+    # central_fraction = 0.7
 
-    train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels, train_weights))
-    test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
+    # train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels, train_weights))
+    # test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
 
-    train_dataset_aug_flip = train_dataset.map(lambda img,l,w: (tf.image.random_flip_left_right(img),l,w))
-    train_dataset_aug_crop = train_dataset_aug_flip.map(lambda img,l,w: (tf.random_crop(img,[crop_h,crop_w,3]),l,w))
+    # train_dataset_aug_flip = train_dataset.map(lambda img,l,w: (tf.image.random_flip_left_right(img),l,w))
+    # train_dataset_aug_crop = train_dataset_aug_flip.map(lambda img,l,w: (tf.random_crop(img,[crop_h,crop_w,3]),l,w))
 
-    train_dataset.concatenate(train_dataset_aug_flip)
+    # train_dataset.concatenate(train_dataset_aug_flip)
 
-    test_dataset_aug = test_dataset.map(lambda img,l,w: (tf.image.central_crop(img, central_fraction),l,w))
-    test_dataset_aug = test_dataset_aug.map(lambda img,l,w: (tf.image.resize_images(img,(ori_h,ori_w)),l,w))
+    # test_dataset_aug = test_dataset.map(lambda img,l,w: (tf.image.central_crop(img, central_fraction),l,w))
+    # test_dataset_aug = test_dataset_aug.map(lambda img,l,w: (tf.image.resize_images(img,(ori_h,ori_w)),l,w))
 
-    test_dataset.concatenate(test_dataset_aug)
+    # test_dataset.concatenate(test_dataset_aug)
 
-    train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
-    test_dataset = test_dataset.batch(args.batch_size)
+    # train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
+    # test_dataset = test_dataset.batch(args.batch_size)
 
     model = SimpleCNN(num_classes=len(CLASS_NAMES))
 
     logdir = os.path.join(args.log_dir,
                           datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
-    checkpoint_dir = os.path.join("./tb", "ckpt")
+    checkpoint_dir = "./tb/2019-02-23_19-19-32"
 
     if os.path.exists(logdir):
         shutil.rmtree(logdir)
@@ -165,73 +168,21 @@ def main():
     optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
     checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
 
+    model.build((args.batch_size,224,224,3))
     # Here restore the models
-    status = checkpoint.restore(tf.train.lates)
+    status = checkpoint.restore("./tb/2019-02-23_19-19-32/ckpt-1")
 
-    train_log = {'iter': [], 'loss': [], 'accuracy': []}
-    test_log = {'iter': [], 'loss': [], 'accuracy': []}
+    
+    weights = model.get_weights()
+    status.assert_consumed()
 
-    for ep in range(args.epochs):
-        epoch_loss_avg = tfe.metrics.Mean()
-
-        for batch, (images, labels, weights) in enumerate(train_dataset):
-
-            loss_value, grads = util.cal_grad(model,
-                                              loss_func=tf.losses.sigmoid_cross_entropy,
-                                              inputs=images,
-                                              weights=weights,
-                                              targets=labels)
-            optimizer.apply_gradients(zip(grads,
-                                          model.trainable_variables),
-                                      global_step)
-            epoch_loss_avg(loss_value)
-
-            if global_step.numpy() % args.log_interval == 0:
-
-                print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '.format(ep,
-                                                         args.epochs,
-                                                         global_step.numpy(),
-                                                         epoch_loss_avg.result()))
-                train_log['iter'].append(global_step.numpy())
-                train_log['loss'].append(epoch_loss_avg.result())
-
-                # Tensorboard Visualization
-                with tf.contrib.summary.always_record_summaries():
-                    tf.contrib.summary.scalar('training_loss', epoch_loss_avg.result())
-                    #tf.contrib.summary.scalar('learning_rate', learning_rate())
-                    # for grad,var in zip(grads,model.trainable_variables):
-                    #     tf.contrib.summary.histogram("gradients_{0}".format(var.name), grad)
+    conv_weights = model.get_conv_weights()
+    kernel_weights = conv_weights[0].numpy() # 11 11 3 96
+    
+    
 
 
-            if global_step.numpy() % args.eval_interval == 0:
-                with tf.contrib.summary.always_record_summaries():
-                    test_AP, test_mAP = util.eval_dataset_map(model, test_dataset)
-                    tf.contrib.summary.scalar('test_map', test_mAP)
-                    #test_loss = test(test_dataset,model)
-                    #tf.contrib.summary.scalar('testing_loss', test_loss)
-
-            # if global_step.numpy() % img_save_interval == 0:
-            #     with tf.contrib.summary.always_record_summaries():
-            #         tf.contrib.summary.image('training_img', images)
-
-        # Save checkpoints
-        checkpoint.save(file_prefix=checkpoint_dir)
-
-    AP, mAP = util.eval_dataset_map(model, test_dataset)
-    # For visualization
-
-    rand_AP = util.compute_ap(
-        test_labels, np.random.random(test_labels.shape),
-        test_weights, average=None)
-    print('Random AP: {} mAP'.format(np.mean(rand_AP)))
-    gt_AP = util.compute_ap(test_labels, test_labels, test_weights, average=None)
-    print('GT AP: {} mAP'.format(np.mean(gt_AP)))
-    print('Obtained {} mAP'.format(mAP))
-    print('Per class:')
-    for cid, cname in enumerate(CLASS_NAMES):
-        print('{}: {}'.format(cname, util.get_el(AP, cid)))
-
-
+    
 if __name__ == '__main__':
     tf.enable_eager_execution()
     main()
