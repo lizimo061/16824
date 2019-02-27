@@ -4,6 +4,7 @@ import tensorflow as tf
 from tensorflow import keras
 import os
 from PIL import Image
+from matplotlib import pyplot as plt
 
 
 def set_session():
@@ -49,6 +50,7 @@ def load_pascal(data_dir, class_names, split='train'):
     image_list = open(os.path.join(imgset_dir, split+".txt"), "r").read()
     image_name = image_list.split('\n')[:-1]
     image_num = len(image_name)
+    image_num = 10
     images = np.empty((image_num,img_h,img_w,3), dtype=np.float32)
     labels = np.empty((image_num,20), dtype=np.int32)
     weights = np.empty((image_num,20), dtype=np.int32)
@@ -56,9 +58,10 @@ def load_pascal(data_dir, class_names, split='train'):
     for i in xrange(image_num):
         # Resize image
         image = Image.open(os.path.join(img_dir, image_name[i]+".jpg"))
-        # print os.path.join(img_dir, image_name[i]+".jpg")
+        print os.path.join(img_dir, image_name[i]+".jpg")
         image = image.resize((img_h,img_w))
         image_np = np.array(image)
+
         images[i,:,:,:] = image_np[np.newaxis,:,:,:]
 
         for j,each_class in enumerate(class_names):

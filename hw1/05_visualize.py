@@ -11,6 +11,7 @@ from tensorflow import keras
 from tensorflow.contrib import eager as tfe
 from tensorflow.keras import layers
 from PIL import Image
+from matplotlib import pyplot as plt
 
 import util
 
@@ -150,10 +151,15 @@ def main():
         visualize_idx = [0,10,20]
         for i in visualize_idx:
             kernel_weight = kernel_weights[:,:,:,i]
-            conv_img = Image.fromarray(kernel_weight, 'RGB')
+            plt.imshow(kernel_weight)
             img_name = "./hw1/figures/ckpt-" + str(cp_ind) + "_conv1_f" + str(i) + ".jpg"
-            conv_img.save(img_name)
-            conv_img.show()
+            plt.savefig(img_name)
+
+            # Using PIL, not correct tho
+            # conv_img = Image.fromarray(kernel_weight, 'RGB')
+            # img_name = "./hw1/figures/ckpt-" + str(cp_ind) + "_conv1_f" + str(i) + ".jpg"
+            # conv_img.save(img_name)
+            # conv_img.show()
 
 
 if __name__ == '__main__':

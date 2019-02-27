@@ -10,8 +10,10 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.contrib import eager as tfe
 from tensorflow.keras import layers
+from sklearn.neighbors import NearestNeighbors
+from sklearn.neighbors import KDTree
 from PIL import Image
-
+from matplotlib import pyplot as plt
 import util
 
 CLASS_NAMES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
@@ -97,7 +99,6 @@ class SimpleCNN(keras.Model):
         out = self.dense1(flat_x)
         out = self.dropout1(out,training=training)
         out = self.dense2(out)
-        out = self.dropout2(out,training=training)
         return out
 
     def compute_output_shape(self, input_shape):
@@ -152,7 +153,6 @@ def main():
                                                               class_names=CLASS_NAMES,
                                                               split='test')
 
-    test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
     model = SimpleCNN(num_classes=len(CLASS_NAMES))
 
     logdir = os.path.join(args.log_dir,
@@ -171,10 +171,52 @@ def main():
 
     model.build((args.batch_size,224,224,3))
     ckpt_path = "./tb/2019-02-25_10-45-32/"
-    status = checkpoint.restore(os.path.join(ckpt_path,"ckpt-"+str(cp_ind)))
+    status = checkpoint.restore(os.path.join(ckpt_path,"ckpt-60"))
     status.assert_consumed()
 
-    # TODO
+    # Test visualization
+    # tmp = test_images[1,:,:,:]
+    # plt.imshow(tmp)
+    # plt.show()
+    # return
+
+
+    query_ind = [0,5] # For testing only, need to generate them for each class
+    image_num = test_images.shape[0]
+    
+    pool5_out = model.call_pool5(test_images)
+    pool5_out = pool5_out.numpy()
+    pool5_out = pool5_out.reshape((image_num, pool5_out.shape[1]*pool5_out.shape[2]*pool5_out.shape[3]))
+    kdt = KDTree(pool5_out, leaf_size=30, metric='euclidean')
+    pool5_inds = kdt.query(pool5_out[np.array(query_ind)], k=5,return_distance=False)
+    fc7_out = model.call_fc7(test_images)
+    fc7_out = fc7_out.numpy()
+    kdt = KDTree(fc7_out, leaf_size=30, metric='euclidean')
+    fc7_inds = kdt.query(fc7_out[np.array(query_ind)], k=5,return_distance=False)
+
+    # For visualization
+    for i in range(0,len(query_ind)):
+        img_list_pool5 = pool5_inds[i,:]
+        img_name_pool5 = "./hw1/figures/caffe_pool5_" + str(i)
+        img_name_fc7 = "./hw1/figures/caffe_fc7_" + str(i)
+        for j in range(1,5):
+            img_id = pool5_inds[0][j]
+            save_name = img_name_pool5 + "_" + str(j) + ".jpg"
+            img = test_images[img_id,:,:,:]
+            plt.imshow(img[...,[2,1,0]])
+            plt.savefig(save_name)
+
+        for j in range(1,5):
+            img_id = fc7_inds[0][j]
+            save_name = img_name_fc7 + "_" + str(j) + ".jpg"
+            img = test_images[img_id,:,:,:]
+            plt.imshow(img[...,[2,1,0]])
+            plt.savefig(save_name)
+
+
+
+
+
 
 
 
