@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import argparse
-import os        
+import os
 import shutil
 from datetime import datetime
 
@@ -71,7 +71,33 @@ class SimpleCNN(keras.Model):
         out = self.dense2(out)
         out = self.dropout2(out,training=training)
         out = self.dense3(out)
+        return out
 
+    def call_pool5(self, inputs):
+        x = self.conv1(inputs)
+        x = self.pool1(x)
+        x = self.conv2(x)
+        x = self.pool2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = self.conv5(x)
+        x = self.pool3(x)
+        return x
+
+    def call_fc7(self, inputs, training=False):
+        x = self.conv1(inputs)
+        x = self.pool1(x)
+        x = self.conv2(x)
+        x = self.pool2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = self.conv5(x)
+        x = self.pool3(x)
+        flat_x = self.flat(x)
+        out = self.dense1(flat_x)
+        out = self.dropout1(out,training=training)
+        out = self.dense2(out)
+        out = self.dropout2(out,training=training)
         return out
 
     def compute_output_shape(self, input_shape):
@@ -118,50 +144,24 @@ def main():
     args = parser.parse_args()
     util.set_random_seed(args.seed)
     sess = util.set_session()
-    img_save_interval = 200
 
     # train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
     #                                                              class_names=CLASS_NAMES,
     #                                                              split='trainval')
-    # test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
-    #                                                           class_names=CLASS_NAMES,
-    #                                                           split='test')
+    test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
+                                                              class_names=CLASS_NAMES,
+                                                              split='test')
 
-    ## TODO modify the following code to apply data augmentation here
-    # ori_h = train_images.shape[1]
-    # ori_w = train_images.shape[2]
-    # crop_h = 224
-    # crop_w = 224
-    # central_fraction = 0.7
-
-    # train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels, train_weights))
-    # test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
-
-    # train_dataset_aug_flip = train_dataset.map(lambda img,l,w: (tf.image.random_flip_left_right(img),l,w))
-    # train_dataset_aug_crop = train_dataset_aug_flip.map(lambda img,l,w: (tf.random_crop(img,[crop_h,crop_w,3]),l,w))
-
-    # train_dataset.concatenate(train_dataset_aug_flip)
-
-    # test_dataset_aug = test_dataset.map(lambda img,l,w: (tf.image.central_crop(img, central_fraction),l,w))
-    # test_dataset_aug = test_dataset_aug.map(lambda img,l,w: (tf.image.resize_images(img,(ori_h,ori_w)),l,w))
-
-    # test_dataset.concatenate(test_dataset_aug)
-
-    # train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
-    # test_dataset = test_dataset.batch(args.batch_size)
-
+    test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
     model = SimpleCNN(num_classes=len(CLASS_NAMES))
 
     logdir = os.path.join(args.log_dir,
                           datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
-    checkpoint_dir = "./tb/2019-02-23_19-19-32"
 
     if os.path.exists(logdir):
         shutil.rmtree(logdir)
     os.makedirs(logdir)
-    writer = tf.contrib.summary.create_file_writer(logdir)
-    writer.set_as_default()
 
     ## TODO write the training and testing code for multi-label classification
     global_step = tf.train.get_or_create_global_step()
@@ -170,23 +170,12 @@ def main():
     checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
 
     model.build((args.batch_size,224,224,3))
-    ckpt_path = "./tb/2019-02-23_19-19-32/"
+    ckpt_path = "./tb/2019-02-25_10-45-32/"
+    status = checkpoint.restore(os.path.join(ckpt_path,"ckpt-"+str(cp_ind)))
+    status.assert_consumed()
 
-    for cp_ind in range(0,60,2):
-        status = checkpoint.restore(os.path.join(ckpt_path,"ckpt-"+str(cp_ind)))
-        weights = model.get_weights()
-        status.assert_consumed()
+    # TODO
 
-        conv_weights = model.get_conv_weights()
-        kernel_weights = conv_weights[0].numpy() # 11 11 3 96
-
-        visualize_idx = [0,10,20]
-        for i in visualize_idx:
-            kernel_weight = kernel_weights[:,:,:,i]
-            conv_img = Image.fromarray(kernel_weight, 'RGB')
-            img_name = "ckpt-" + str(cp_ind) + "_conv1_f" + str(i) + ".jpg"
-            conv_img.save(img_prefix)
-            conv_img.show()
 
 
 if __name__ == '__main__':

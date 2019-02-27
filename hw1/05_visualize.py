@@ -155,8 +155,6 @@ def main():
     logdir = os.path.join(args.log_dir,
                           datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
-    checkpoint_dir = "./tb/2019-02-23_19-19-32"
-
     if os.path.exists(logdir):
         shutil.rmtree(logdir)
     os.makedirs(logdir)
@@ -171,7 +169,7 @@ def main():
 
     model.build((args.batch_size,224,224,3))
     ckpt_path = "./tb/2019-02-23_19-19-32/"
-    
+
     for cp_ind in range(0,60,2):
         status = checkpoint.restore(os.path.join(ckpt_path,"ckpt-"+str(cp_ind)))
         weights = model.get_weights()
