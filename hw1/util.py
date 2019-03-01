@@ -50,7 +50,8 @@ def load_pascal(data_dir, class_names, split='train'):
     image_list = open(os.path.join(imgset_dir, split+".txt"), "r").read()
     image_name = image_list.split('\n')[:-1]
     image_num = len(image_name)
-    images = np.empty((image_num,img_h,img_w,3), dtype=np.float32)
+    images = []
+    # images = np.empty((image_num,img_h,img_w,3), dtype=np.float32)
     labels = np.empty((image_num,20), dtype=np.int32)
     weights = np.empty((image_num,20), dtype=np.int32)
     for i in xrange(image_num):
@@ -59,8 +60,8 @@ def load_pascal(data_dir, class_names, split='train'):
         print os.path.join(img_dir, image_name[i]+".jpg")
         image = image.resize((img_h,img_w))
         image_np = np.array(image)
-
-        images[i,:,:,:] = image_np
+        images.append(image_np)
+        # images[i,:,:,:] = image_np
 
         for j,each_class in enumerate(class_names):
 
@@ -88,7 +89,7 @@ def load_pascal(data_dir, class_names, split='train'):
     #for i in range(10):
     #    print 'label ',labels[i,:]
     #    print 'weights ', weights[i,:]
-
+    images = np.array(images)
     return images, labels, weights
 
 

@@ -155,7 +155,8 @@ def main():
 
     model = SimpleCNN(num_classes=len(CLASS_NAMES))
 
-    
+    test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
+    test_dataset = test_dataset.batch(args.batch_size)
 
     ## TODO write the training and testing code for multi-label classification
     global_step = tf.train.get_or_create_global_step()
@@ -178,16 +179,29 @@ def main():
     #1 2 3 4 10 11 15 40 45 54 image name
     query_ind = [0,1,2,3,6,7,10,20,22,25] # For testing only, need to generate them for each class
     image_num = test_images.shape[0]
-    
-    pool5_out = model.call_pool5(test_images)
-    pool5_out = pool5_out.numpy()
-    pool5_out = pool5_out.reshape((image_num, pool5_out.shape[1]*pool5_out.shape[2]*pool5_out.shape[3]))
-    kdt = KDTree(pool5_out, leaf_size=30, metric='euclidean')
-    pool5_inds = kdt.query(pool5_out[np.array(query_ind)], k=5,return_distance=False)
-    fc7_out = model.call_fc7(test_images)
-    fc7_out = fc7_out.numpy()
+    total_pool5_out = []
+    total_fc7_out = []
+    for batch, (images, labels, weights) in enumerate(test_dataset):
+        pool5_out = model.call_pool5(images)
+        pool5_out = pool5_out.numpy()
+        pool5_out = pool5_out.reshape((pool5_out.shape[0], pool5_out.shape[1]*pool5_out.shape[2]*pool5_out.shape[3]))
+        fc7_out = model.call_fc7(test_images)
+        fc7_out = fc7_out.numpy()
+        for i in range(pool5_out.shape[0]):
+            total_pool5_out.append(pool5_out[i,:])
+            total_fc7_out.append(fc7_out[i,:])
+    total_pool5_out = np.array(total_pool5_out)
+    total_fc7_out = np.array(total_fc7_out)
+
+    # pool5_out = model.call_pool5(test_images)
+    # pool5_out = pool5_out.numpy()
+    # pool5_out = pool5_out.reshape((image_num, pool5_out.shape[1]*pool5_out.shape[2]*pool5_out.shape[3]))
+    kdt = KDTree(total_pool5_out, leaf_size=30, metric='euclidean')
+    pool5_inds = kdt.query(total_pool5_out[np.array(query_ind)], k=5,return_distance=False)
+    # fc7_out = model.call_fc7(test_images)
+    # fc7_out = fc7_out.numpy()
     kdt = KDTree(fc7_out, leaf_size=30, metric='euclidean')
-    fc7_inds = kdt.query(fc7_out[np.array(query_ind)], k=5,return_distance=False)
+    fc7_inds = kdt.query(total_fc7_out[np.array(query_ind)], k=5,return_distance=False)
 
     # For visualization
     for i in range(0,len(query_ind)):

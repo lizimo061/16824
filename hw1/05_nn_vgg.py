@@ -262,13 +262,7 @@ def main():
 
     model = SimpleCNN(num_classes=len(CLASS_NAMES))
 
-    logdir = os.path.join(args.log_dir,
-                          datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-
-
-    if os.path.exists(logdir):
-        shutil.rmtree(logdir)
-    os.makedirs(logdir)
+    
 
     ## TODO write the training and testing code for multi-label classification
     global_step = tf.train.get_or_create_global_step()
@@ -290,7 +284,7 @@ def main():
 
     query_ind = [0,1,2,3,6,7,10,20,22,25] # For testing only, need to generate them for each class
     image_num = test_images.shape[0]
-    
+
     pool5_out = model.call_pool5(test_images)
     pool5_out = pool5_out.numpy()
     pool5_out = pool5_out.reshape((image_num, pool5_out.shape[1]*pool5_out.shape[2]*pool5_out.shape[3]))
