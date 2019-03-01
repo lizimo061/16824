@@ -59,7 +59,7 @@ def load_pascal(data_dir, class_names, split='train'):
         image = Image.open(os.path.join(img_dir, image_name[i]+".jpg"))
         print os.path.join(img_dir, image_name[i]+".jpg")
         image = image.resize((img_h,img_w))
-        image_np = np.array(image)
+        image_np = np.array(image, dtype = np.float32)
         images.append(image_np)
         # images[i,:,:,:] = image_np
 

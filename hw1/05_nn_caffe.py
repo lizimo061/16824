@@ -101,6 +101,21 @@ class SimpleCNN(keras.Model):
         out = self.dense2(out)
         return out
 
+    def call_fc7_pool5(self, inputs, training=False):
+        x = self.conv1(inputs)
+        x = self.pool1(x)
+        x = self.conv2(x)
+        x = self.pool2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x_conv5 = self.conv5(x)
+        x = self.pool3(x_conv5)
+        flat_x = self.flat(x)
+        out = self.dense1(flat_x)
+        out = self.dropout1(out,training=training)
+        out = self.dense2(out)
+        return x_conv5,out
+
     def compute_output_shape(self, input_shape):
         shape = tf.TensorShape(input_shape).as_list()
         shape = [shape[0], self.num_classes]
@@ -182,10 +197,10 @@ def main():
     total_pool5_out = []
     total_fc7_out = []
     for batch, (images, labels, weights) in enumerate(test_dataset):
-        pool5_out = model.call_pool5(images)
+        pool5_out,fc7_out = model.call_fc7_pool5(images)
         pool5_out = pool5_out.numpy()
         pool5_out = pool5_out.reshape((pool5_out.shape[0], pool5_out.shape[1]*pool5_out.shape[2]*pool5_out.shape[3]))
-        fc7_out = model.call_fc7(test_images)
+        #fc7_out = model.call_fc7(test_images)
         fc7_out = fc7_out.numpy()
         for i in range(pool5_out.shape[0]):
             total_pool5_out.append(pool5_out[i,:])
@@ -196,20 +211,23 @@ def main():
     # pool5_out = model.call_pool5(test_images)
     # pool5_out = pool5_out.numpy()
     # pool5_out = pool5_out.reshape((image_num, pool5_out.shape[1]*pool5_out.shape[2]*pool5_out.shape[3]))
-    kdt = KDTree(total_pool5_out, leaf_size=30, metric='euclidean')
+    kdt = KDTree(total_pool5_out, metric='euclidean')
     pool5_inds = kdt.query(total_pool5_out[np.array(query_ind)], k=5,return_distance=False)
     # fc7_out = model.call_fc7(test_images)
     # fc7_out = fc7_out.numpy()
-    kdt = KDTree(fc7_out, leaf_size=30, metric='euclidean')
-    fc7_inds = kdt.query(total_fc7_out[np.array(query_ind)], k=5,return_distance=False)
+    print(pool5_inds)
 
+    kdt = KDTree(total_fc7_out, metric='euclidean')
+    fc7_inds = kdt.query(total_fc7_out[np.array(query_ind)], k=5,return_distance=False)
+    print(fc7_inds)
     # For visualization
     for i in range(0,len(query_ind)):
         img_list_pool5 = pool5_inds[i,:]
+        img_list_fc7 = fc7_inds[i,:]
         img_name_pool5 = "./hw1/figures/caffe_pool5_" + str(i)
         img_name_fc7 = "./hw1/figures/caffe_fc7_" + str(i)
         for j in range(1,5):
-            img_id = pool5_inds[0][j]
+            img_id = img_list_pool5[j]
             save_name = img_name_pool5 + "_" + str(j) + ".jpg"
             img = test_images[img_id,:,:,:]
             img = img.astype(np.uint8)
@@ -217,7 +235,7 @@ def main():
             plt.savefig(save_name)
 
         for j in range(1,5):
-            img_id = fc7_inds[0][j]
+            img_id = img_list_fc7[j]
             save_name = img_name_fc7 + "_" + str(j) + ".jpg"
             img = test_images[img_id,:,:,:]
             img = img.astype(np.uint8)
