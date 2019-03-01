@@ -13,6 +13,7 @@ from tensorflow.keras import layers
 from sklearn.manifold import TSNE
 from PIL import Image
 from matplotlib import pyplot as plt
+
 import util
 
 CLASS_NAMES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
@@ -115,7 +116,7 @@ def map_class(labels):
         tmp = labels[i,:]
         ind = np.where(tmp>0)[0]
         out = np.mean(ind) + 1
-        out_labels.append(int(out))
+        out_labels.append(out)
     return out_labels
 
 def main():
@@ -151,9 +152,6 @@ def main():
                                                               split='test')
 
 
-    tt = map_class(test_labels)
-    print tt
-    return
     random_ind = np.random.randint(test_images.shape[0], size=1000)
     test_images_sub = test_images[random_ind,:,:,:]
     test_labels_sub = test_labels[random_ind,:]
@@ -184,6 +182,18 @@ def main():
 
     fc7_out_tsne = TSNE(n_components=2).fit_transform(total_fc7_out)
     print(fc7_out_tsne.shape)
+
+    norm_labels = map_class(test_labels_sub)
+
+    fig = plt.figure(figsize=(8, 8))
+    ax = plt.subplot(aspect='equal')
+
+    draw = ax.scatter(fc7_out_tsne[:,0], fc7_out_tsne[:,1],
+                    c=norm_labels)
+    fig.colorbar(draw, ax=ax)
+    ax.axis('off')
+    plt.show()
+    plt.savefig("./hw1/figures/tsne.jpg")
 
 if __name__ == '__main__':
     tf.enable_eager_execution()

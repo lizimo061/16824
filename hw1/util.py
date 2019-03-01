@@ -50,7 +50,6 @@ def load_pascal(data_dir, class_names, split='train'):
     image_list = open(os.path.join(imgset_dir, split+".txt"), "r").read()
     image_name = image_list.split('\n')[:-1]
     image_num = len(image_name)
-    image_num = 50
     images = []
 
     # images = np.empty((image_num,img_h,img_w,3), dtype=np.float32)
