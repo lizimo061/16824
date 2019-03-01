@@ -151,6 +151,9 @@ def main():
                                                               split='test')
 
 
+    tt = map_class(test_labels)
+    print tt
+    return
     random_ind = np.random.randint(test_images.shape[0], size=1000)
     test_images_sub = test_images[random_ind,:,:,:]
     test_labels_sub = test_labels[random_ind,:]
