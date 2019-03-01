@@ -5,7 +5,7 @@ from tensorflow import keras
 import os
 from PIL import Image
 from matplotlib import pyplot as plt
-
+import cv2
 
 def set_session():
     config = tf.ConfigProto()
@@ -50,11 +50,9 @@ def load_pascal(data_dir, class_names, split='train'):
     image_list = open(os.path.join(imgset_dir, split+".txt"), "r").read()
     image_name = image_list.split('\n')[:-1]
     image_num = len(image_name)
-    image_num = 20
     images = np.empty((image_num,img_h,img_w,3), dtype=np.float32)
     labels = np.empty((image_num,20), dtype=np.int32)
     weights = np.empty((image_num,20), dtype=np.int32)
-
     for i in xrange(image_num):
         # Resize image
         image = Image.open(os.path.join(img_dir, image_name[i]+".jpg"))
@@ -62,7 +60,7 @@ def load_pascal(data_dir, class_names, split='train'):
         image = image.resize((img_h,img_w))
         image_np = np.array(image)
 
-        images[i,:,:,:] = image_np[np.newaxis,:,:,:]
+        images[i,:,:,:] = image_np
 
         for j,each_class in enumerate(class_names):
 
@@ -80,7 +78,11 @@ def load_pascal(data_dir, class_names, split='train'):
                 labels[i,j] = 0
                 weights[i,j] = 0
 
-
+    # tmp = images[4,:,:,:]
+    # tmp = tmp.astype(np.uint8)
+    # print(tmp-test)
+    # plt.imshow(tmp)
+    # plt.show()
     ''' DEBUG '''
     #np.set_printoptions(threshold=np.nan)
     #for i in range(10):
@@ -201,4 +203,4 @@ if __name__ == '__main__':
     'sofa',
     'train',
     'tvmonitor',]
-    load_pascal(data_dir, class_names, split='train')
+    load_pascal(data_dir, class_names, split='test')

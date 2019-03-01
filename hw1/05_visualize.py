@@ -12,7 +12,7 @@ from tensorflow.contrib import eager as tfe
 from tensorflow.keras import layers
 from PIL import Image
 from matplotlib import pyplot as plt
-
+from matplotlib import colors
 import util
 
 CLASS_NAMES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
@@ -93,6 +93,11 @@ def test(dataset,model):
 
     return test_loss.result()
 
+def kernel_normalize(weights):
+    max_val = np.amax(weights)
+    min_val = np.amin(weights)
+    norm_weights = 255*(weights-min_val)/(max_val-min_val)
+    return norm_weights
 
 
 def main():
@@ -122,14 +127,13 @@ def main():
 
     model = SimpleCNN(num_classes=len(CLASS_NAMES))
 
-    logdir = os.path.join(args.log_dir,
-                          datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    # logdir = os.path.join(args.log_dir,
+    #                       datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
-    if os.path.exists(logdir):
-        shutil.rmtree(logdir)
-    os.makedirs(logdir)
-    writer = tf.contrib.summary.create_file_writer(logdir)
-    writer.set_as_default()
+    # if os.path.exists(logdir):
+    #     shutil.rmtree(logdir)
+    # os.makedirs(logdir)
+    
 
     ## TODO write the training and testing code for multi-label classification
     global_step = tf.train.get_or_create_global_step()
@@ -140,7 +144,7 @@ def main():
     model.build((args.batch_size,224,224,3))
     ckpt_path = "./tb/2019-02-25_10-45-32/"
 
-    for cp_ind in range(1,61,20):
+    for cp_ind in range(1,61,5):
         status = checkpoint.restore(os.path.join(ckpt_path,"ckpt-"+str(cp_ind)))
         weights = model.get_weights()
         status.assert_consumed()
@@ -151,8 +155,11 @@ def main():
         visualize_idx = [0,10,20]
         for i in visualize_idx:
             kernel_weight = kernel_weights[:,:,:,i]
-            plt.imshow(kernel_weight)
+            norm = colors.Normalize(0,1)
+            norm_weight = kernel_normalize(kernel_weight)
+            plt.imshow(norm_weight,cmap='gray')
             img_name = "./hw1/figures/ckpt-" + str(cp_ind) + "_conv1_f" + str(i) + ".jpg"
+            # plt.show()
             plt.savefig(img_name)
 
             # Using PIL, not correct tho

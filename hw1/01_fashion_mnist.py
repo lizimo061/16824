@@ -66,7 +66,7 @@ def test(model, dataset):
         prediction = tf.argmax(logits, axis=1, output_type=tf.int32)
         test_accuracy(prediction, labels)
         test_loss(loss_value)
-    return test_loss.result(), test_accuracy.result()
+    return test_loss.result(), test _accuracy.result()
 
 
 def predict(model, images, class_names):

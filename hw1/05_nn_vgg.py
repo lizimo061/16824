@@ -288,7 +288,7 @@ def main():
     # return
 
 
-    query_ind = [0,5] # For testing only, need to generate them for each class
+    query_ind = [0,1,2,3,6,7,10,20,22,25] # For testing only, need to generate them for each class
     image_num = test_images.shape[0]
     
     pool5_out = model.call_pool5(test_images)
@@ -310,14 +310,16 @@ def main():
             img_id = pool5_inds[0][j]
             save_name = img_name_pool5 + "_" + str(j) + ".jpg"
             img = test_images[img_id,:,:,:]
-            plt.imshow(img[...,[2,1,0]])
+            img = img.astype(np.uint8)
+            plt.imshow(img)
             plt.savefig(save_name)
 
         for j in range(1,5):
             img_id = fc7_inds[0][j]
             save_name = img_name_fc7 + "_" + str(j) + ".jpg"
             img = test_images[img_id,:,:,:]
-            plt.imshow(img[...,[2,1,0]])
+            img = img.astype(np.uint8)
+            plt.imshow(img)
             plt.savefig(save_name)
 
 
