@@ -108,7 +108,15 @@ class SimpleCNN(keras.Model):
     def get_conv_weights(self):
         return self.conv1.weights
 
-
+def map_class(labels):
+    num = labels.shape[0]
+    out_labels = []
+    for i in range(num):
+        tmp = labels[i,:]
+        ind = np.where(tmp>0)[0]
+        out = np.mean(ind) + 1
+        out_labels.append(int(out))
+    return out_labels
 
 def main():
     parser = argparse.ArgumentParser(description='TensorFlow Pascal Example')
@@ -142,15 +150,15 @@ def main():
                                                               class_names=CLASS_NAMES,
                                                               split='test')
 
+
+    random_ind = np.random.randint(test_images.shape[0], size=1000)
+    test_images_sub = test_images[random_ind,:,:,:]
+    test_labels_sub = test_labels[random_ind,:]
+    test_weights_sub = test_weights[random_ind,:]
+
     model = SimpleCNN(num_classes=len(CLASS_NAMES))
-
-    logdir = os.path.join(args.log_dir,
-                          datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-
-
-    if os.path.exists(logdir):
-        shutil.rmtree(logdir)
-    os.makedirs(logdir)
+    test_dataset = tf.data.Dataset.from_tensor_slices((test_images_sub, test_labels_sub, test_weights_sub))
+    test_dataset = test_dataset.batch(args.batch_size)
 
     ## TODO write the training and testing code for multi-label classification
     global_step = tf.train.get_or_create_global_step()
@@ -163,12 +171,15 @@ def main():
     status = checkpoint.restore(os.path.join(ckpt_path,"ckpt-60"))
     status.assert_consumed()
 
-    random_ind = np.random.randint(test_images.shape[0], size=10)
+    total_fc7_out = []
+    for batch, (images, labels, weights) in enumerate(test_dataset):
+        fc7_out = model.call_fc7(images)
+        fc7_out = fc7_out.numpy()
+        for i in range(fc7_out.shape[0]):
+            total_fc7_out.append(fc7_out[i,:])
+    total_fc7_out = np.array(total_fc7_out)
 
-    fc7_out = model.call_fc7(test_images[random_ind,:,:,:])
-
-
-    fc7_out_tsne = TSNE(n_components=2).fit_transform(fc7_out)
+    fc7_out_tsne = TSNE(n_components=2).fit_transform(total_fc7_out)
     print(fc7_out_tsne.shape)
 
 if __name__ == '__main__':
