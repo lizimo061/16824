@@ -137,8 +137,8 @@ def main():
     # TODO:
     # define loss function (criterion) and optimizer
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, momentum=0.9)
+    criterion = nn.CrossEntropyLoss().cuda()
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, momentum=args.momentum)
 
 
     # optionally resume from a checkpoint
@@ -258,8 +258,8 @@ def train(train_loader, model, criterion, optimizer, epoch):
         # TODO: Perform any necessary functions on the output
         # TODO: Compute loss using ``criterion``
 
-
-
+        output = model(input)
+        loss = criterion(outpu, target)
 
 
         # measure metrics and record loss

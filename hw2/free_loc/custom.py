@@ -42,9 +42,12 @@ def find_classes(imdb):
 def make_dataset(imdb, class_to_idx):
     #TODO: return list of (image path, list(+ve class indices)) tuples
     #You will be using this in IMDBDataset
-
-    
-
+    image_num = imdb.num_images()
+    dataset_list = []
+    for i in range(image_num):
+        img_path = imdb.image_path_at(i)
+        gt_classes = imdb[i]['gt_classes']
+        dataset_list.append((img_path, gt_classes))
 
     return dataset_list
 
@@ -78,32 +81,32 @@ class LocalizerAlexNet(nn.Module):
     def __init__(self, num_classes=20):
         super(LocalizerAlexNet, self).__init__()
         #TODO: Define model
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        self.features = nn.Sequential(
+            nn.Conv2d(3,64,kernel_size=11, stride=4, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(64,192,kernel_size=5, stride=1, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(192,384,kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(384,256,kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256,256,kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+        )
+        self.classifier = nn.Sequential(
+            nn.Conv2d(256,256,kernel_size=3,stride=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256,256,kernel_size=1,stride=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256,num_classes,kernel_size=1,stride=1),
+        )
 
     def forward(self, x):
         #TODO: Define forward pass
-
-
-
-
-
-
+        x = self.features(x)
+        x = self.classifier(x)
 
         return x
 
@@ -227,18 +230,13 @@ class IMDBDataset(data.Dataset):
                                    (it can be a numpy array)
         """
         # TODO: Write this function, look at the imagenet code for inspiration
+        img_path = self.imgs[index][0]
+        img_cls = self.imgs[index][1]
+        img = Image.open(img_path)
+        img = np.array(img, dtype = np.float32)
 
-
-
-
-
-
-
-
-
-
-
-
+        target = np.zeros(len(self.classes))
+        target[img_cls-1] = 1
 
         return img, target
 
