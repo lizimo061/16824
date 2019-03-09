@@ -261,6 +261,7 @@ class imdb(object):
                                                  b[i]['gt_overlaps']])
       a[i]['seg_areas'] = np.hstack((a[i]['seg_areas'],
                                      b[i]['seg_areas']))
+
     return a
 
   def competition_mode(self, on):

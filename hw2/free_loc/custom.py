@@ -31,9 +31,10 @@ def find_classes(imdb):
     #TODO: class_to_idx: dictionary with keys=classes and values=class index
     #If you did Task 0, you should know how to set these values from the imdb
 
-
-
-
+    classes = list(imdb.classes)
+    classes_to_idx = {}
+    for ind,item in enumerate(classes,1):
+        classes_to_idx[item] = ind
 
     return classes, class_to_idx
 
@@ -42,7 +43,7 @@ def make_dataset(imdb, class_to_idx):
     #TODO: return list of (image path, list(+ve class indices)) tuples
     #You will be using this in IMDBDataset
 
-
+    
 
 
     return dataset_list

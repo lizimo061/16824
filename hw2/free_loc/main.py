@@ -137,12 +137,8 @@ def main():
     # TODO:
     # define loss function (criterion) and optimizer
 
-
-
-
-
-
-
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, momentum=0.9)
 
 
     # optionally resume from a checkpoint
