@@ -259,7 +259,8 @@ def train(train_loader, model, criterion, optimizer, epoch):
         # TODO: Compute loss using ``criterion``
 
         output = model(input)
-        loss = criterion(outpu, target)
+        # Global max-pooling
+        loss = criterion(output, target)
 
 
         # measure metrics and record loss
