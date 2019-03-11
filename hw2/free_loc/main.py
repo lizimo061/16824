@@ -137,8 +137,8 @@ def main():
     # TODO:
     # define loss function (criterion) and optimizer
 
-    criterion = nn.CrossEntropyLoss().cuda()
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, momentum=args.momentum)
+    criterion = nn.BCEWithLogitsLoss().cuda()
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
 
     # optionally resume from a checkpoint
@@ -260,6 +260,8 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
         output = model(input)
         # Global max-pooling
+        output = F.max_pool2d(output, kernel_size=output.shape[2])
+        output = torch.reshape(output, (output.shape[0],output.shape[1]))
         loss = criterion(output, target)
 
 
@@ -273,7 +275,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
         # TODO:
         # compute gradient and do SGD step
 
-
+        
 
 
 

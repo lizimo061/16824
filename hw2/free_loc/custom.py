@@ -32,9 +32,9 @@ def find_classes(imdb):
     #If you did Task 0, you should know how to set these values from the imdb
 
     classes = list(imdb.classes)
-    classes_to_idx = {}
+    class_to_idx = {}
     for ind,item in enumerate(classes,1):
-        classes_to_idx[item] = ind
+        class_to_idx[item] = ind
 
     return classes, class_to_idx
 
@@ -42,11 +42,12 @@ def find_classes(imdb):
 def make_dataset(imdb, class_to_idx):
     #TODO: return list of (image path, list(+ve class indices)) tuples
     #You will be using this in IMDBDataset
-    image_num = imdb.num_images()
+    image_num = imdb.num_images
     dataset_list = []
+    gt_roidb = imdb.gt_roidb()
     for i in range(image_num):
         img_path = imdb.image_path_at(i)
-        gt_classes = imdb[i]['gt_classes']
+        gt_classes = gt_roidb[i]['gt_classes']
         dataset_list.append((img_path, gt_classes))
 
     return dataset_list
@@ -232,8 +233,8 @@ class IMDBDataset(data.Dataset):
         # TODO: Write this function, look at the imagenet code for inspiration
         img_path = self.imgs[index][0]
         img_cls = self.imgs[index][1]
-        img = Image.open(img_path)
-        img = np.array(img, dtype = np.float32)
+        img = self.loader(img_path)
+        img = self.transform(img)
 
         target = np.zeros(len(self.classes))
         target[img_cls-1] = 1
