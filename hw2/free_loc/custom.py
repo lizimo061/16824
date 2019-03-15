@@ -111,7 +111,12 @@ class LocalizerAlexNet(nn.Module):
 
         return x
 
+    # For heat map
+    def conv_output(self,x):
+        conv_out = self.features(x)
+        x = self.classifier(conv_out)
 
+        return conv_out,x
 
 
 class LocalizerAlexNetHighres(nn.Module):
@@ -144,7 +149,7 @@ class LocalizerAlexNetHighres(nn.Module):
 
 
 def localizer_alexnet(pretrained=False, **kwargs):
-    r"""AlexNet model architecture from the
+    """AlexNet model architecture from the
     `"One weird trick..." <https://arxiv.org/abs/1404.5997>`_ paper.
 
     Args:
@@ -153,9 +158,10 @@ def localizer_alexnet(pretrained=False, **kwargs):
     model = LocalizerAlexNet(**kwargs)
     #TODO: Initialize weights correctly based on whethet it is pretrained or
     # not
+    if pretrained:
 
 
-
+    else:
 
 
 
@@ -169,7 +175,7 @@ def localizer_alexnet(pretrained=False, **kwargs):
 
 
 def localizer_alexnet_robust(pretrained=False, **kwargs):
-    r"""AlexNet model architecture from the
+    """AlexNet model architecture from the
     `"One weird trick..." <https://arxiv.org/abs/1404.5997>`_ paper.
 
     Args:

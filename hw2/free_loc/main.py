@@ -203,10 +203,19 @@ def main():
     # modifications to train()
     if args.vis:
         import visdom
+        from tensorboardX import SummaryWriter
 
-
-
-
+        class Logger(object):
+            def __init__(self, log_dir,vis_http,port):
+                self.writer = SummaryWriter(log_dir,vis_http,port)
+                self.log_dir = log_dir
+                self.vis = visdom.Visdom(server=vis_http,port=port)
+            def scalar_summary(self,tag,value,iteration):
+                self.writer.add_scalar(tag,value,iteration)
+            def img_summary(self,tag,img,iteration):
+                self.writer.add_image(tag,img,iteration)
+            def vis_img(self,img):
+                self.vis.image(img)
 
 
 
@@ -235,7 +244,7 @@ def main():
 
 
 #TODO: You can add input arguments if you wish
-def train(train_loader, model, criterion, optimizer, epoch):
+def train(train_loader, model, criterion, optimizer, epoch, logger=None):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
@@ -275,9 +284,9 @@ def train(train_loader, model, criterion, optimizer, epoch):
         # TODO:
         # compute gradient and do SGD step
 
-        
-
-
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
 
         # measure elapsed time
@@ -302,8 +311,13 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
         #TODO: Visualize things as mentioned in handout
         #TODO: Visualize at appropriate intervals
+        if args.vis:
+            # Save 2 each batch
 
-
+            # Generate heat map, according to https://github.com/utkuozbulak/pytorch-cnn-visualizations/
+            # input_img, target_img
+            conv_out, out = model.conv_out(input_img)
+            
 
 
 
@@ -334,11 +348,11 @@ def validate(val_loader, model, criterion):
         # TODO: Perform any necessary functions on the output
         # TODO: Compute loss using ``criterion``
 
-
-
-
-
-
+        output = model(input)
+        # Global max-pooling
+        output = F.max_pool2d(output, kernel_size=output.shape[2])
+        output = torch.reshape(output, (output.shape[0],output.shape[1]))
+        loss = criterion(output, target)
 
 
         # measure metrics and record loss
