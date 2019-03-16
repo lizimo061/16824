@@ -112,11 +112,11 @@ class LocalizerAlexNet(nn.Module):
         return x
 
     # For heat map
-    def conv_output(self,x):
-        conv_out = self.features(x)
-        x = self.classifier(conv_out)
+    # def conv_output(self,x):
+    #     conv_out = self.features(x)
+    #     x = self.classifier(conv_out)
 
-        return conv_out,x
+    #     return conv_out,x
 
 
 class LocalizerAlexNetHighres(nn.Module):
@@ -159,14 +159,22 @@ def localizer_alexnet(pretrained=False, **kwargs):
     #TODO: Initialize weights correctly based on whethet it is pretrained or
     # not
     if pretrained:
+        model_dict = model.state_dict()
+        pre_state_dict = model_zoo.load_url(model_urls['alexnet'])
 
-
+        pre_dict = {k:v for k,v in pre_state_dict.items() if k in model_dict and 'features' in k}
+        model_dict.update(pre_dict)
+        model.load_state_dict(model_dict)
+        print("====== Pretrained model loaded ======")
     else:
+        print("====== Initialize from scratch ======")
+        for m in model.features.modules():
+            if isinstance(m,nn.Conv2d):
+                nn.init.xavier_normal_(m.weight)
 
-
-
-
-
+    for m in model.classifier.modules():
+        if isinstance(m, nn.Conv2d):
+            nn.init.xavier_normal_(m.weight)
 
     return model
 

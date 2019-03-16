@@ -2,11 +2,12 @@ import argparse
 import os
 import shutil
 import time
+from datetime import datetime
 import sys
 sys.path.insert(0, 'faster_rcnn')
 import sklearn
 import sklearn.metrics
-
+from logger import Logger
 import torch
 import torch.nn as nn
 import torch.nn.parallel
@@ -19,6 +20,11 @@ import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
+
+from matplotlib import cm
+import matplotlib.pyplot as plt
+from PIL import Image
+import cv2
 
 from datasets.factory import get_imdb
 from custom import *
@@ -138,7 +144,7 @@ def main():
     # define loss function (criterion) and optimizer
 
     criterion = nn.BCEWithLogitsLoss().cuda()
-    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
 
     # optionally resume from a checkpoint
@@ -201,29 +207,18 @@ def main():
     # TODO: Create loggers for visdom and tboard
     # TODO: You can pass the logger objects to train(), make appropriate
     # modifications to train()
-    if args.vis:
-        import visdom
-        from tensorboardX import SummaryWriter
+    # logger = None
+    # if args.vis:
+    #     logger = Logger("./log/",'http://localhost','8097')
 
-        class Logger(object):
-            def __init__(self, log_dir,vis_http,port):
-                self.writer = SummaryWriter(log_dir,vis_http,port)
-                self.log_dir = log_dir
-                self.vis = visdom.Visdom(server=vis_http,port=port)
-            def scalar_summary(self,tag,value,iteration):
-                self.writer.add_scalar(tag,value,iteration)
-            def img_summary(self,tag,img,iteration):
-                self.writer.add_image(tag,img,iteration)
-            def vis_img(self,img):
-                self.vis.image(img)
-
-
-
+    log_path = os.path.join("./log/",datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    os.makedirs(log_path)
+    logger = Logger(log_path,'http://localhost','8097')
     for epoch in range(args.start_epoch, args.epochs):
         adjust_learning_rate(optimizer, epoch)
 
         # train for one epoch
-        train(train_loader, model, criterion, optimizer, epoch)
+        train(train_loader, model, criterion, optimizer, epoch, trainval_imdb, logger)
 
         # evaluate on validation set
         if epoch % args.eval_freq == 0 or epoch == args.epochs - 1:
@@ -244,35 +239,43 @@ def main():
 
 
 #TODO: You can add input arguments if you wish
-def train(train_loader, model, criterion, optimizer, epoch, logger=None):
+def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
     avg_m1 = AverageMeter()
     avg_m2 = AverageMeter()
 
+    batch_num = len(train_loader)
+    img_record_inverval= batch_num/3
+    img_record_per_batch = 2
     # switch to train mode
     model.train()
 
     end = time.time()
+
+    
     for i, (input, target) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
+        iter_num = epoch*batch_num + i + 1
 
         target = target.type(torch.FloatTensor).cuda(async=True)
-        input_var = input
+        input_var = input # bs, 3, 512, 512
         target_var = target
 
         # TODO: Get output from model
         # TODO: Perform any necessary functions on the output
         # TODO: Compute loss using ``criterion``
 
-        output = model(input)
+        output = model(input) # 20,20,29,29
         # Global max-pooling
-        output = F.max_pool2d(output, kernel_size=output.shape[2])
-        output = torch.reshape(output, (output.shape[0],output.shape[1]))
-        loss = criterion(output, target)
+        
+        imoutput = F.max_pool2d(output, kernel_size=output.shape[2]) # 20,20,1,1 
+        imoutput = imoutput.view(-1, imoutput.shape[1]) # 20,20
+        loss = criterion(imoutput, target)
 
+        logger.scalar_summary("train/loss",loss,iter_num)
 
         # measure metrics and record loss
         m1 = metric1(imoutput.data, target)
@@ -311,17 +314,44 @@ def train(train_loader, model, criterion, optimizer, epoch, logger=None):
 
         #TODO: Visualize things as mentioned in handout
         #TODO: Visualize at appropriate intervals
-        if args.vis:
-            # Save 2 each batch
+        
+        if i % img_record_inverval==0 and logger!=None:
+            for ind in range(img_record_per_batch):
+                img = input_var[ind,:,:,:]
+                tmp_heat = output[ind,:,:,:]
+                gt_class = target[ind,:]
+                img = img.data.numpy()
+                tmp_heat = tmp_heat.data.cpu().numpy()
+                gt_class = gt_class.data.cpu().numpy()
+                gt_class = np.nonzero(gt_class)[0].astype(int)
+                tmp_heat = tmp_heat[gt_class,:,:]
+                
+                # For original image
+                title = str(epoch) + "_" + str(iter_num) + "_" + str(i) + "_image_" + str(ind) 
+                logger.img_summary("train/img",img,iter_num)
+                logger.vis_img(img, title)
 
-            # Generate heat map, according to https://github.com/utkuozbulak/pytorch-cnn-visualizations/
-            # input_img, target_img
-            conv_out, out = model.conv_out(input_img)
-            
+                #For heat map
+                for cla in range(tmp_heat.shape[0]):
+                    heat = tmp_heat[cla,:,:]
+                    title = str(epoch) + "_" + str(iter_num) + "_" + str(i) + "_heatmap_" + db.classes[gt_class[cla]-1] + "_" + str(ind) 
+                    
+                    heat = (heat - np.min(heat))/(np.max(heat)-np.min(heat))
 
+                    heat_trans = transforms.Compose([
+                        transforms.ToPILImage(),
+                        transforms.Resize((img.shape[1],img.shape[2]))
+                        ])
+                    heat = torch.Tensor(heat).unsqueeze(0)
+                    heat_map = heat_trans(heat)
+                    heat_map = np.uint8(cm.jet(np.array(heat_map))*255)
+                    heat_map = np.transpose(heat_map, axes=(2,0,1))
 
+                    logger.img_summary("train/heat_map",heat_map,iter_num)
+                    
+                    logger.vis_img(heat_map, title)
 
-
+        # Save 2 each batch
 
 
 
@@ -348,11 +378,14 @@ def validate(val_loader, model, criterion):
         # TODO: Perform any necessary functions on the output
         # TODO: Compute loss using ``criterion``
 
-        output = model(input)
+        output = model(input) # 20,20,29,29
         # Global max-pooling
-        output = F.max_pool2d(output, kernel_size=output.shape[2])
-        output = torch.reshape(output, (output.shape[0],output.shape[1]))
-        loss = criterion(output, target)
+        
+        imoutput = F.max_pool2d(output, kernel_size=output.shape[2]) # 20,20,1,1 
+        imoutput = imoutput.view(-1, imoutput.shape[1]) # 20,20
+        loss = criterion(imoutput, target)
+
+        # logger.scalar_summary("test/loss",loss,i)
 
 
         # measure metrics and record loss
