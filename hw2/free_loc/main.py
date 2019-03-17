@@ -129,6 +129,13 @@ def main():
     args = parser.parse_args()
     args.distributed = args.world_size > 1
 
+    log_path = os.path.join("./log/",datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    os.makedirs(log_path)
+    logger = Logger(log_path,'http://localhost','8097')
+
+    torch.manual_seed(6)
+    np.random.seed(6)
+
     # create model
     print("=> creating model '{}'".format(args.arch))
     if args.arch == 'localizer_alexnet':
@@ -201,7 +208,7 @@ def main():
         pin_memory=True)
 
     if args.evaluate:
-        validate(val_loader, model, criterion)
+        validate(val_loader, model, criterion,logger)
         return
 
     # TODO: Create loggers for visdom and tboard
@@ -211,9 +218,7 @@ def main():
     # if args.vis:
     #     logger = Logger("./log/",'http://localhost','8097')
 
-    log_path = os.path.join("./log/",datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-    os.makedirs(log_path)
-    logger = Logger(log_path,'http://localhost','8097')
+    
     for epoch in range(args.start_epoch, args.epochs):
         adjust_learning_rate(optimizer, epoch)
 
@@ -222,7 +227,7 @@ def main():
 
         # evaluate on validation set
         if epoch % args.eval_freq == 0 or epoch == args.epochs - 1:
-            m1, m2 = validate(val_loader, model, criterion)
+            m1, m2 = validate(val_loader, model, criterion,logger)
             score = m1 * m2
             # remember best prec@1 and save checkpoint
             is_best = score > best_prec1
@@ -273,6 +278,7 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
         
         imoutput = F.max_pool2d(output, kernel_size=output.shape[2]) # 20,20,1,1 
         imoutput = imoutput.view(-1, imoutput.shape[1]) # 20,20
+        imoutput = F.sigmoid(imoutput)
         loss = criterion(imoutput, target)
 
         logger.scalar_summary("train/loss",loss,iter_num)
@@ -359,7 +365,7 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
         # End of train()
 
 
-def validate(val_loader, model, criterion):
+def validate(val_loader, model, criterion,logger):
     batch_time = AverageMeter()
     losses = AverageMeter()
     avg_m1 = AverageMeter()
@@ -383,6 +389,7 @@ def validate(val_loader, model, criterion):
         
         imoutput = F.max_pool2d(output, kernel_size=output.shape[2]) # 20,20,1,1 
         imoutput = imoutput.view(-1, imoutput.shape[1]) # 20,20
+        imoutput = F.sigmoid(imoutput)
         loss = criterion(imoutput, target)
 
         # logger.scalar_summary("test/loss",loss,i)
@@ -394,6 +401,8 @@ def validate(val_loader, model, criterion):
         losses.update(loss.data[0], input.size(0))
         avg_m1.update(m1[0], input.size(0))
         avg_m2.update(m2[0], input.size(0))
+
+        logger.scalar_summary("test/mAP",m1[0],i)
 
         # measure elapsed time
         batch_time.update(time.time() - end)
@@ -461,7 +470,25 @@ def adjust_learning_rate(optimizer, epoch):
 
 def metric1(output, target):
     # TODO: Ignore for now - proceed till instructed
-    return [0]
+    # mAP?
+    nclasses = target.shape[1]
+    AP = []
+    target = target.cpu().numpy()
+    output = output.cpu().numpy()
+
+    for cid in range(nclasses):
+        gt_cls = target[:,cid].astype('float32')
+        pred_cls = output[:,cid].astype('float32')
+        
+        if len(np.nonzero(gt_cls)[0])!=0:
+            pred_cls -= 1e-5 * gt_cls
+            ap = sklearn.metrics.average_precision_score(gt_cls,pred_cls)
+        else:
+            ap = 0
+        AP.append(ap)
+
+    mAP = sum(AP)/len(AP)
+    return [mAP]
 
 
 def metric2(output, target):
