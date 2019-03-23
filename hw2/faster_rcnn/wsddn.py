@@ -55,18 +55,16 @@ class WSDDN(nn.Module):
             print(classes)
 
         #TODO: Define the WSDDN model (look at faster_rcnn.py)
+        self.features = VGG16(bn=False)
+        self.conv1 = Conv2d(512, 512, 3, same_padding=True)
 
+        self.roi_pool = RoIPool(7, 7, 1.0/16)        
+        self.fc6 = FC(512 * 7 * 7, 4096)
+        self.fc7 = FC(4096, 4096)
 
-
-
-
-
-
-
-
-
-
-
+        self.fc8 = FC(4096, self.n_classes, relu=False)
+        self.class_score
+        self.det_score 
 
         # loss
         self.cross_entropy = None
@@ -93,19 +91,21 @@ class WSDDN(nn.Module):
         #TODO: Use im_data and rois as input
         # compute cls_prob which are N_roi X 20 scores
         # Checkout faster_rcnn.py for inspiration
+        features = self.features(im_data)
 
-
-
-
-
-
-
-
+        pooled_features = self.roi_pool(features, rois)
+        x = pooled_features.view(pooled_features.size()[0], -1)
+        x = self.fc6(x)
+        x = F.dropout(x, training=self.training)
+        x = self.fc7(x)
+        x = F.dropout(x, training=self.training)
 
         if self.training:
             label_vec = torch.from_numpy(gt_vec).cuda().float()
             label_vec = label_vec.view(self.n_classes, -1)
             self.cross_entropy = self.build_loss(cls_prob, label_vec)
+
+
         return cls_prob
 
     def build_loss(self, cls_prob, label_vec):
