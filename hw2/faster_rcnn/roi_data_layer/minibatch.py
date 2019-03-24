@@ -53,16 +53,14 @@ def get_weak_minibatch(roidb, num_classes):
                            num_classes)
         #TODO: same as get_minibatch, but we only use the image-level labels
         #So blobs['labels'] should contain a 1x20 binary vector for each image
-
         label_tmp = np.zeros((1,num_classes), dtype=np.float32)
-        label_tmp[labels[np.nonzero(labels)]-1] = 1
-        labels_blob = np.hstack((labels_blob, label_tmp))
+        label_tmp[:,labels[np.nonzero(labels)]-1] = 1
+        labels_blob = np.vstack((labels_blob, label_tmp))
 
         rois = _project_im_rois(im_rois, im_scales[im_i])
         batch_ind = im_i * np.ones((rois.shape[0], 1))
         rois_blob_this_image = np.hstack((batch_ind, rois))
         rois_blob = np.vstack((rois_blob, rois_blob_this_image))
-
 
     blobs['rois'] = rois_blob
     blobs['labels'] = labels_blob
@@ -156,8 +154,8 @@ def _sample_rois(roidb, fg_rois_per_image, rois_per_image, num_classes):
     examples.
     """
     # label = class RoI has max overlap with
-    #labels = roidb['labels']
-    labels = None
+    labels = roidb['gt_classes']
+    # labels = None
     overlaps = roidb['max_overlaps']
     rois = roidb['boxes']
 

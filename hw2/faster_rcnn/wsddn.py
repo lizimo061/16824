@@ -24,6 +24,9 @@ def softmax(input, axis=1):
     input_2d = trans_input.contiguous().view(-1, trans_size[-1])
     soft_max_2d = F.softmax(input_2d)
     soft_max_nd = soft_max_2d.view(*trans_size)
+    # print("input size", input_size)
+    # print("trans size", trans_size)
+    # print("input 2d", input_2d.size())
     return soft_max_nd.transpose(axis, len(input_size) - 1)
 
 
@@ -63,8 +66,6 @@ class WSDDN(nn.Module):
         self.fc7 = FC(4096, 4096)
 
         self.fc8 = FC(4096, self.n_classes, relu=False)
-        self.class_score
-        self.det_score 
 
         # loss
         self.cross_entropy = None
@@ -100,12 +101,20 @@ class WSDDN(nn.Module):
         x = self.fc7(x)
         x = F.dropout(x, training=self.training)
 
+        cls_score = self.fc8(x)
+        det_score = self.fc8(x)
+        cls_prob = softmax(cls_score)
+        det_prob = softmax(det_score, axis=0)
+
+        cls_prob = cls_prob*det_prob
+        
+
         if self.training:
             label_vec = torch.from_numpy(gt_vec).cuda().float()
-            label_vec = label_vec.view(self.n_classes, -1)
+            label_vec = label_vec.view(-1,self.n_classes)
             self.cross_entropy = self.build_loss(cls_prob, label_vec)
 
-
+        cls_prob = torch.sum(cls_prob, dim=0).view(-1,self.n_classes)
         return cls_prob
 
     def build_loss(self, cls_prob, label_vec):
@@ -119,16 +128,9 @@ class WSDDN(nn.Module):
         #TODO: Compute the appropriate loss using the cls_prob that is the
         #output of forward()
         #Checkout forward() to see how it is called 
-
-
-
-
-
-
-
-
-
-
+        label_vec_rep = label_vec.repeat(cls_prob.size()[0],1)
+        bceloss = F.binary_cross_entropy(cls_prob, label_vec_rep)
+        print("loss,", bceloss)
 
         return bceloss
 

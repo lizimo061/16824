@@ -106,12 +106,8 @@ net.train()
 
 # TODO: Create optimizer for network parameters from conv2 onwards
 # (do not optimize conv1)
-
-
-
-
-
-
+opt_param = list(net.parameters())
+optimizer = torch.optim.SGD(opt_param[2:],lr=lr,momentum=momentum,weight_decay=weight_decay)
 
 
 
