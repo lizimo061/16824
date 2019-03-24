@@ -42,6 +42,7 @@ pretrained_model = 'data/pretrained_model/alexnet_imagenet.npy'
 output_dir = 'models/saved_model'
 visualize = True
 vis_interval = 5000
+eval_interval = 100
 
 start_step = 0
 end_step = 30000
@@ -109,8 +110,6 @@ net.train()
 opt_param = list(net.parameters())
 optimizer = torch.optim.SGD(opt_param[2:],lr=lr,momentum=momentum,weight_decay=weight_decay)
 
-
-
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
@@ -152,8 +151,8 @@ for step in range(start_step, end_step + 1):
         re_cnt = True
 
     #TODO: evaluate the model every N iterations (N defined in handout)
-
-
+    if step % eval_interval == 0:
+        
 
 
 

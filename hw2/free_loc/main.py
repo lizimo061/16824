@@ -218,7 +218,7 @@ def main():
     # if args.vis:
     #     logger = Logger("./log/",'http://localhost','8097')
 
-    
+
     for epoch in range(args.start_epoch, args.epochs):
         adjust_learning_rate(optimizer, epoch)
 
@@ -259,7 +259,7 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
 
     end = time.time()
 
-    
+
     for i, (input, target) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
@@ -275,8 +275,8 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
 
         output = model(input) # 20,20,29,29
         # Global max-pooling
-        
-        imoutput = F.max_pool2d(output, kernel_size=output.shape[2]) # 20,20,1,1 
+
+        imoutput = F.max_pool2d(output, kernel_size=output.shape[2]) # 20,20,1,1
         imoutput = imoutput.view(-1, imoutput.shape[1]) # 20,20
         imoutput = F.sigmoid(imoutput)
         loss = criterion(imoutput, target)
@@ -320,7 +320,7 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
 
         #TODO: Visualize things as mentioned in handout
         #TODO: Visualize at appropriate intervals
-        
+
         if i % img_record_inverval==0 and logger!=None:
             for ind in range(img_record_per_batch):
                 img = input_var[ind,:,:,:]
@@ -331,17 +331,17 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
                 gt_class = gt_class.data.cpu().numpy()
                 gt_class = np.nonzero(gt_class)[0].astype(int)
                 tmp_heat = tmp_heat[gt_class,:,:]
-                
+
                 # For original image
-                title = str(epoch) + "_" + str(iter_num) + "_" + str(i) + "_image_" + str(ind) 
+                title = str(epoch) + "_" + str(iter_num) + "_" + str(i) + "_image_" + str(ind)
                 logger.img_summary("train/img",img,iter_num)
                 logger.vis_img(img, title)
 
                 #For heat map
                 for cla in range(tmp_heat.shape[0]):
                     heat = tmp_heat[cla,:,:]
-                    title = str(epoch) + "_" + str(iter_num) + "_" + str(i) + "_heatmap_" + db.classes[gt_class[cla]-1] + "_" + str(ind) 
-                    
+                    title = str(epoch) + "_" + str(iter_num) + "_" + str(i) + "_heatmap_" + db.classes[gt_class[cla]-1] + "_" + str(ind)
+
                     heat = (heat - np.min(heat))/(np.max(heat)-np.min(heat))
 
                     heat_trans = transforms.Compose([
@@ -354,7 +354,7 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
                     heat_map = np.transpose(heat_map, axes=(2,0,1))
 
                     logger.img_summary("train/heat_map",heat_map,iter_num)
-                    
+
                     logger.vis_img(heat_map, title)
 
         # Save 2 each batch
@@ -386,8 +386,8 @@ def validate(val_loader, model, criterion,logger):
 
         output = model(input) # 20,20,29,29
         # Global max-pooling
-        
-        imoutput = F.max_pool2d(output, kernel_size=output.shape[2]) # 20,20,1,1 
+
+        imoutput = F.max_pool2d(output, kernel_size=output.shape[2]) # 20,20,1,1
         imoutput = imoutput.view(-1, imoutput.shape[1]) # 20,20
         imoutput = F.sigmoid(imoutput)
         loss = criterion(imoutput, target)
@@ -479,7 +479,7 @@ def metric1(output, target):
     for cid in range(nclasses):
         gt_cls = target[:,cid].astype('float32')
         pred_cls = output[:,cid].astype('float32')
-        
+
         if len(np.nonzero(gt_cls)[0])!=0:
             pred_cls -= 1e-5 * gt_cls
             ap = sklearn.metrics.average_precision_score(gt_cls,pred_cls)
@@ -493,6 +493,8 @@ def metric1(output, target):
 
 def metric2(output, target):
     #TODO: Ignore for now - proceed till instructed
+
+    
     return [0]
 
 
