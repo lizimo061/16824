@@ -150,7 +150,7 @@ def main():
     # TODO:
     # define loss function (criterion) and optimizer
 
-    criterion = nn.BCEWithLogitsLoss().cuda()
+    criterion = nn.BCELoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
 
@@ -208,7 +208,7 @@ def main():
         pin_memory=True)
 
     if args.evaluate:
-        validate(val_loader, model, criterion,logger)
+        validate(val_loader, model, criterion, trainval_imdb, logger)
         return
 
     # TODO: Create loggers for visdom and tboard
@@ -227,7 +227,7 @@ def main():
 
         # evaluate on validation set
         if epoch % args.eval_freq == 0 or epoch == args.epochs - 1:
-            m1, m2 = validate(val_loader, model, criterion,logger)
+            m1, m2 = validate(val_loader, model, criterion, trainval_imdb, logger)
             score = m1 * m2
             # remember best prec@1 and save checkpoint
             is_best = score > best_prec1
@@ -365,7 +365,7 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
         # End of train()
 
 
-def validate(val_loader, model, criterion,logger):
+def validate(val_loader, model, criterion,db,logger):
     batch_time = AverageMeter()
     losses = AverageMeter()
     avg_m1 = AverageMeter()
@@ -384,15 +384,14 @@ def validate(val_loader, model, criterion,logger):
         # TODO: Perform any necessary functions on the output
         # TODO: Compute loss using ``criterion``
 
-        output = model(input) # 20,20,29,29
+        output = model(input) 
         # Global max-pooling
         
-        imoutput = F.max_pool2d(output, kernel_size=output.shape[2]) # 20,20,1,1 
-        imoutput = imoutput.view(-1, imoutput.shape[1]) # 20,20
+        imoutput = F.max_pool2d(output, kernel_size=output.shape[2])  
+        imoutput = imoutput.view(-1, imoutput.shape[1]) 
         imoutput = F.sigmoid(imoutput)
         loss = criterion(imoutput, target)
 
-        # logger.scalar_summary("test/loss",loss,i)
 
 
         # measure metrics and record loss
@@ -423,8 +422,38 @@ def validate(val_loader, model, criterion,logger):
 
         #TODO: Visualize things as mentioned in handout
         #TODO: Visualize at appropriate intervals
+        if i<20:
+            img = input_var[0,:,:,:]
+            tmp_heat = output[0,:,:,:]
+            gt_class = target[0,:]
+            img = img.data.numpy()
+            tmp_heat = tmp_heat.data.cpu().numpy()
+            gt_class = gt_class.data.cpu().numpy()
+            gt_class = np.nonzero(gt_class)[0].astype(int)
+            tmp_heat = tmp_heat[gt_class,:,:]
+                
+            # For original image
+            title = "validate_" + str(i) + "_image" 
+            logger.img_summary("validate/img",img,i)
+            logger.vis_img(img, title)
+            for cla in range(tmp_heat.shape[0]):
+                heat = tmp_heat[cla,:,:]
+                title = "validate_" + str(i) + "_heatmap_" + db.classes[gt_class[cla]-1]
+                    
+                heat = (heat - np.min(heat))/(np.max(heat)-np.min(heat))
 
+                heat_trans = transforms.Compose([
+                    transforms.ToPILImage(),
+                    transforms.Resize((img.shape[1],img.shape[2]))
+                    ])
+                heat = torch.Tensor(heat).unsqueeze(0)
+                heat_map = heat_trans(heat)
+                heat_map = np.uint8(cm.jet(np.array(heat_map))*255)
+                heat_map = np.transpose(heat_map, axes=(2,0,1))
 
+                logger.img_summary("validate/heat_map",heat_map,i)
+                    
+                logger.vis_img(heat_map, title)
 
 
 
