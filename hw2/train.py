@@ -168,18 +168,18 @@ for step in range(start_step, end_step + 1):
         logger.scalar_summary("test/map",np.mean(aps),step)
 
 
-
+    logger.scalar_summary("train/loss",loss.data[0],step)
     #TODO: Perform all visualizations here
     #You can define other interval variable if you want (this is just an
     #example)
     #The intervals for different things are defined in the handout
-    if visualize and step % vis_interval == 0:
-        #TODO: Create required visualizations
-        if use_tensorboard:
-            print('Logging to Tensorboard')
-            logger.scalar_summary("train/loss",loss.data[0],step)
-        if use_visdom:
-            print('Logging to visdom')
+    # if visualize and step % vis_interval == 0:
+    #     #TODO: Create required visualizations
+    #     if use_tensorboard:
+    #         print('Logging to Tensorboard')
+    #         logger.scalar_summary("train/loss",loss.data[0],step)
+    #     if use_visdom:
+    #         print('Logging to visdom')
 
     if visualize and step % grad_interval == 0:
         for tag, params in net.named_parameters():
@@ -188,7 +188,7 @@ for step in range(start_step, end_step + 1):
             tag = tag.replace('.','/')
             weights = params.data
             gradients = params.grad.data
-            logger.hist_summary("tag", weights, step)
+            logger.hist_summary(tag, weights, step)
             logger.hist_summary(tag+'/grad', gradients, step)
 
 
