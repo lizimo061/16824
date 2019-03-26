@@ -312,12 +312,8 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
             tag = tag.replace('.','/')
             weights = params.data
             gradients = params.grad.data
-            # logger.writer.add_histogram("test",params.clone().cpu().data.numpy())
-            try:
-                logger.hist_summary("tag", weights, iter_num)
-            except:
-                traceback.print_exc()
-            # logger.hist_summary(tag+'/grad', gradients, iter_num)
+            logger.hist_summary("tag", weights, iter_num)
+            logger.hist_summary(tag+'/grad', gradients, iter_num)
 
 
         # measure elapsed time
@@ -539,9 +535,22 @@ def metric1(output, target):
 
 def metric2(output, target):
     #TODO: Ignore for now - proceed till instructed
-
+    auc = []
+    nclasses = target.shape[1]
+    target = target.cpu().numpy()
+    output = output.cpu().numpy()
     
-    return [0]
+    for cid in range(nclasses):
+        gt_cls = target[:,cid].astype('float32')
+        pred_cls = output[:,cid].astype('float32')
+
+        if len(np.nonzero(gt_cls)[0])!=0:
+            pred_cls -= 1e-5 * gt_cls
+            auc_tmp = sklearn.metrics.roc_auc_score(gt_cls,pred_cls)
+        else:
+            auc_tmp = 0
+        auc.append(auc_tmp)
+    return [np.mean(auc)]
 
 
 if __name__ == '__main__':

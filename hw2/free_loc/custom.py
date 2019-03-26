@@ -142,6 +142,7 @@ class LocalizerAlexNetRobust(nn.Module):
             nn.Conv2d(256,256,kernel_size=1,stride=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(256,num_classes,kernel_size=1,stride=1),
+            nn.Dropout2d(p=0.4,inplace=True)
         )
 
     def forward(self, x):
