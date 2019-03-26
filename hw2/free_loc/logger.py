@@ -3,10 +3,12 @@ import numpy as np
 from tensorboardX import SummaryWriter
 
 class Logger(object):
-    def __init__(self, log_dir,vis_http,port):
+    def __init__(self, log_dir,vis_http,port,use_visdom=False):
         self.writer = SummaryWriter(log_dir=log_dir)
         self.log_dir = log_dir
-        self.vis = visdom.Visdom(server=vis_http,port=port)
+        self.vis = None
+        if use_visdom:
+            self.vis = visdom.Visdom(server=vis_http,port=port)
         print "Start logging..."
 
     def scalar_summary(self,tag,value,iteration):

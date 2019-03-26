@@ -45,8 +45,9 @@ cfg_file = 'experiments/cfgs/wsddn.yml'
 pretrained_model = 'data/pretrained_model/alexnet_imagenet.npy'
 output_dir = 'models/saved_model'
 visualize = True
-vis_interval = 5000
-eval_interval = 100
+vis_interval = 500
+grad_interval = 2000
+eval_interval = 5000
 
 start_step = 0
 end_step = 30000
@@ -150,7 +151,7 @@ for step in range(start_step, end_step + 1):
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
-    logger.scalar_summary("train/loss",loss.data[0],step)
+    
     # Log to screen
     if step % disp_interval == 0:
         duration = t.toc(average=False)
@@ -176,10 +177,19 @@ for step in range(start_step, end_step + 1):
         #TODO: Create required visualizations
         if use_tensorboard:
             print('Logging to Tensorboard')
+            logger.scalar_summary("train/loss",loss.data[0],step)
         if use_visdom:
             print('Logging to visdom')
 
-
+    if visualize and step % grad_interval == 0:
+        for tag, params in net.named_parameters():
+            if params.grad is None:
+                continue
+            tag = tag.replace('.','/')
+            weights = params.data
+            gradients = params.grad.data
+            logger.hist_summary("tag", weights, step)
+            logger.hist_summary(tag+'/grad', gradients, step)
 
 
     # Save model occasionally

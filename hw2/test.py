@@ -139,8 +139,8 @@ def test_net(name,
                 .astype(np.float32, copy=False)
             keep = nms(cls_dets, cfg.TEST.NMS)
             cls_dets = cls_dets[keep, :]
-            # if visualize:
-            #     im2show = vis_detections(im2show, imdb.classes[j], cls_dets)
+            if visualize:
+                im2show = vis_detections(im2show, imdb.classes[j], cls_dets)
             all_boxes[j][i] = cls_dets
 
         # Limit to max_per_image detections *over all classes*
@@ -161,10 +161,7 @@ def test_net(name,
             # TODO: Visualize here using tensorboard
             # TODO: use the logger that is an argument to this function
             print('Visualizing')
-
-
-
-
+            logger.img_summary("result_img", img2show, step)
 
 
     with open(det_file, 'wb') as f:
@@ -172,6 +169,11 @@ def test_net(name,
 
     print('Evaluating detections')
     aps = imdb.evaluate_detections(all_boxes, output_dir)
+
+    if visualize and logger is not None:
+        for i in range(imdb.num_classes):
+            logger.scalar_summary("test/ap/"+imdb.classes[i], aps[i], step)
+
     return aps
 
 
