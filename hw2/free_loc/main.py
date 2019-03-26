@@ -312,7 +312,7 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
             tag = tag.replace('.','/')
             weights = params.data
             gradients = params.grad.data
-            logger.hist_summary("tag", weights, iter_num)
+            logger.hist_summary(tag, weights, iter_num)
             logger.hist_summary(tag+'/grad', gradients, iter_num)
 
 
