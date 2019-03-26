@@ -31,6 +31,7 @@ from datasets.factory import get_imdb
 from custom import *
 
 import pdb
+import traceback
 
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
@@ -311,9 +312,11 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
             tag = tag.replace('.','/')
             weights = params.data
             gradients = params.grad.data
-            tmp = np.array([0])
             # logger.writer.add_histogram("test",params.clone().cpu().data.numpy())
-            logger.hist_summary("tag", tmp, iter_num)
+            try:
+                logger.hist_summary("tag", weights, iter_num)
+            except:
+                traceback.print_exc()
             # logger.hist_summary(tag+'/grad', gradients, iter_num)
 
 
