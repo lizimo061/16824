@@ -1,5 +1,6 @@
 import argparse
 import os
+import torch
 import shutil
 import time
 from datetime import datetime
@@ -8,7 +9,7 @@ sys.path.insert(0, 'faster_rcnn')
 import sklearn
 import sklearn.metrics
 from logger import Logger
-import torch
+
 import torch.nn as nn
 import torch.nn.parallel
 import torch.nn.functional as F
@@ -28,6 +29,8 @@ import cv2
 
 from datasets.factory import get_imdb
 from custom import *
+
+import pdb
 
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
@@ -208,7 +211,7 @@ def main():
         pin_memory=True)
 
     if args.evaluate:
-        validate(val_loader, model, criterion, trainval_imdb, logger)
+        validate(val_loader, model, criterion, trainval_imdb, logger=None)
         return
 
     # TODO: Create loggers for visdom and tboard
@@ -278,10 +281,11 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
 
         imoutput = F.max_pool2d(output, kernel_size=output.shape[2]) # 20,20,1,1
         imoutput = imoutput.view(-1, imoutput.shape[1]) # 20,20
-        imoutput = F.sigmoid(imoutput)
+        imoutput = torch.sigmoid(imoutput)
         loss = criterion(imoutput, target)
 
-        logger.scalar_summary("train/loss",loss,iter_num)
+
+        
 
         # measure metrics and record loss
         m1 = metric1(imoutput.data, target)
@@ -290,12 +294,27 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
         avg_m1.update(m1[0], input.size(0))
         avg_m2.update(m2[0], input.size(0))
 
+        logger.scalar_summary("train/loss",losses.avg,iter_num)
+        logger.scalar_summary("train/metric1",avg_m1.avg,iter_num)
+        logger.scalar_summary("train/metric2",avg_m2.avg,iter_num)
+
         # TODO:
         # compute gradient and do SGD step
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        for tag, params in model.named_parameters():
+            if params.grad is None:
+                continue
+            tag = tag.replace('.','/')
+            weights = params.data
+            gradients = params.grad.data
+            tmp = np.array([0])
+            # logger.writer.add_histogram("test",params.clone().cpu().data.numpy())
+            logger.hist_summary("tag", tmp, iter_num)
+            # logger.hist_summary(tag+'/grad', gradients, iter_num)
 
 
         # measure elapsed time
@@ -357,15 +376,11 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
 
                     logger.vis_img(heat_map, title)
 
-        # Save 2 each batch
-
-
-
 
         # End of train()
 
 
-def validate(val_loader, model, criterion,db,logger):
+def validate(val_loader, model, criterion,db,logger=None):
     batch_time = AverageMeter()
     losses = AverageMeter()
     avg_m1 = AverageMeter()
@@ -399,8 +414,8 @@ def validate(val_loader, model, criterion,db,logger):
         losses.update(loss.data[0], input.size(0))
         avg_m1.update(m1[0], input.size(0))
         avg_m2.update(m2[0], input.size(0))
-
-        logger.scalar_summary("test/mAP",m1[0],i)
+        if logger!=None:
+            logger.scalar_summary("test/mAP",m1[0],i)
 
         # measure elapsed time
         batch_time.update(time.time() - end)
@@ -421,7 +436,7 @@ def validate(val_loader, model, criterion,db,logger):
 
         #TODO: Visualize things as mentioned in handout
         #TODO: Visualize at appropriate intervals
-        if i<20:
+        if i<20 and logger!=None:
             img = input_var[0,:,:,:]
             tmp_heat = output[0,:,:,:]
             gt_class = target[0,:]

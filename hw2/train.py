@@ -3,12 +3,14 @@ from __future__ import division
 from __future__ import print_function
 import _init_paths
 import os
+import sys
 import torch
 import torch.utils.model_zoo as model_zoo
 from torch.nn.parameter import Parameter
 import numpy as np
 from datetime import datetime
-
+sys.path.insert(0, 'free_loc')
+from logger import Logger
 import cPickle as pkl
 import network
 from wsddn import WSDDN
@@ -20,6 +22,7 @@ from datasets.factory import get_imdb
 from fast_rcnn.config import cfg, cfg_from_file
 import gc
 import pdb
+from test import test_net
 
 try:
     from termcolor import cprint
@@ -37,6 +40,7 @@ def log_print(text, color=None, on_color=None, attrs=None):
 # hyper-parameters
 # ------------
 imdb_name = 'voc_2007_trainval'
+test_imdb_name = 'voc_2007_test'
 cfg_file = 'experiments/cfgs/wsddn.yml'
 pretrained_model = 'data/pretrained_model/alexnet_imagenet.npy'
 output_dir = 'models/saved_model'
@@ -72,6 +76,7 @@ log_interval = cfg.TRAIN.LOG_IMAGE_ITERS
 
 # load imdb and create data later
 imdb = get_imdb(imdb_name)
+test_imdb = get_imdb(test_imdb_name)
 rdl_roidb.prepare_roidb(imdb)
 roidb = imdb.roidb
 data_layer = RoIDataLayer(roidb, imdb.num_classes)
@@ -99,6 +104,10 @@ for name, param in pret_net.items():
     except:
         print('Did not find {}'.format(name))
         continue
+
+log_path = os.path.join("./wsddn_log/",datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+os.makedirs(log_path)
+logger = Logger(log_path,'http://localhost','8097')
 
 # Move model to GPU and set train mode
 net.load_state_dict(own_state)
@@ -141,6 +150,7 @@ for step in range(start_step, end_step + 1):
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
+    logger.scalar_summary("train/loss",loss.data[0],step)
     # Log to screen
     if step % disp_interval == 0:
         duration = t.toc(average=False)
@@ -152,9 +162,9 @@ for step in range(start_step, end_step + 1):
         re_cnt = True
 
     #TODO: evaluate the model every N iterations (N defined in handout)
-    if step % eval_interval == 0:
-        
-
+    if step % eval_interval == 0 and step > 0:
+        aps = test_net("test",net,test_imdb,visualize=True,logger=logger)
+        logger.scalar_summary("test/map",np.mean(aps),step)
 
 
 

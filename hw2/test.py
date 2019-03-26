@@ -5,6 +5,7 @@ from __future__ import print_function
 import _init_paths
 
 import os
+import sys
 import torch
 import cv2
 import cPickle
@@ -19,6 +20,8 @@ from fast_rcnn.bbox_transform import bbox_transform_inv, clip_boxes
 from datasets.factory import get_imdb
 from fast_rcnn.config import cfg, cfg_from_file, get_output_dir
 
+sys.path.insert(0, 'free_loc')
+from logger import Logger
 import visdom
 # hyper-parameters
 # ------------
@@ -117,9 +120,10 @@ def test_net(name,
         im = cv2.imread(imdb.image_path_at(i))
         rois = imdb.roidb[i]['boxes']
         _t['im_detect'].tic()
+        net.training = False
         scores, boxes = im_detect(net, im, rois)
         detect_time = _t['im_detect'].toc(average=False)
-
+        net.training = True
         _t['misc'].tic()
         if visualize:
             # im2show = np.copy(im[:, :, (2, 1, 0)])
@@ -135,8 +139,8 @@ def test_net(name,
                 .astype(np.float32, copy=False)
             keep = nms(cls_dets, cfg.TEST.NMS)
             cls_dets = cls_dets[keep, :]
-            if visualize:
-                im2show = vis_detections(im2show, imdb.classes[j], cls_dets)
+            # if visualize:
+            #     im2show = vis_detections(im2show, imdb.classes[j], cls_dets)
             all_boxes[j][i] = cls_dets
 
         # Limit to max_per_image detections *over all classes*

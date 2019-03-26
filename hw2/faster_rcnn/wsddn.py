@@ -130,7 +130,6 @@ class WSDDN(nn.Module):
         #Checkout forward() to see how it is called 
         label_vec_rep = label_vec.repeat(cls_prob.size()[0],1)
         bceloss = F.binary_cross_entropy(cls_prob, label_vec_rep)
-        print("loss,", bceloss)
 
         return bceloss
 
