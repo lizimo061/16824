@@ -135,7 +135,7 @@ def main():
 
     log_path = os.path.join("./log/",datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     os.makedirs(log_path)
-    logger = Logger(log_path,'http://localhost','8097')
+    logger = Logger(log_path,'http://localhost','8097',use_visdom=True)
 
     torch.manual_seed(6)
     np.random.seed(6)
