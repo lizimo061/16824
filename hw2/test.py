@@ -140,7 +140,7 @@ def test_net(name,
             keep = nms(cls_dets, cfg.TEST.NMS)
             cls_dets = cls_dets[keep, :]
             if visualize:
-                im2show = vis_detections(im2show, imdb.classes[j], cls_dets)
+                im2show = vis_detections(im2show, imdb.classes[newj], cls_dets, thresh=0.35)
             all_boxes[j][i] = cls_dets
 
         # Limit to max_per_image detections *over all classes*
@@ -160,8 +160,8 @@ def test_net(name,
         if visualize and np.random.rand() < 0.01:
             # TODO: Visualize here using tensorboard
             # TODO: use the logger that is an argument to this function
-            print('Visualizing')
-            logger.img_summary("result_img", img2show, step)
+            im2show = im.transpose(2,0,1)
+            logger.img_summary("result_img"+str(i), im2show, step)
 
 
     with open(det_file, 'wb') as f:

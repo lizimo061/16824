@@ -127,6 +127,15 @@ parser.add_argument('--vis', action='store_true')
 
 best_prec1 = 0
 
+def denormalize(image):
+    print(image.shape)
+    mean = torch.tensor([0.485, 0.456, 0.406],dtype=torch.float32)
+    std = torch.tensor([0.229, 0.224, 0.225],dtype=torch.float32)
+
+    denorm = transforms.Normalize((-mean/std).tolist(), (1.0/std).tolist())
+
+    return denorm(image)
+
 
 def main():
     global args, best_prec1
@@ -181,6 +190,8 @@ def main():
 
     normalize = transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+
     train_dataset = IMDBDataset(
         trainval_imdb,
         transforms.Compose([
@@ -341,7 +352,8 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
 
         if i % img_record_inverval==0 and logger!=None:
             for ind in range(img_record_per_batch):
-                img = input_var[ind,:,:,:]
+                img = denormalize(input_var[ind,:,:,:])
+                # img = input_var[ind,:,:,:]
                 tmp_heat = output[ind,:,:,:]
                 gt_class = target[ind,:]
                 img = img.data.numpy()
@@ -414,7 +426,7 @@ def validate(val_loader, model, criterion,db,logger=None):
         avg_m1.update(m1[0], input.size(0))
         avg_m2.update(m2[0], input.size(0))
         if logger!=None:
-            logger.scalar_summary("test/mAP",m1[0],i)
+            logger.scalar_summary("test/mAP",avg_m1.avg,i)
 
         # measure elapsed time
         batch_time.update(time.time() - end)
@@ -512,7 +524,7 @@ def adjust_learning_rate(optimizer, epoch):
 
 def metric1(output, target):
     # TODO: Ignore for now - proceed till instructed
-    # mAP?
+    # mAP
     nclasses = target.shape[1]
     AP = []
     target = target.cpu().numpy()

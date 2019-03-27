@@ -58,14 +58,33 @@ class WSDDN(nn.Module):
             print(classes)
 
         #TODO: Define the WSDDN model (look at faster_rcnn.py)
-        self.features = VGG16(bn=False)
-        self.conv1 = Conv2d(512, 512, 3, same_padding=True)
+        self.features = nn.Sequential(
+            nn.Conv2d(3,64,kernel_size=11, stride=4, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(64,192,kernel_size=5, stride=1, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(192,384,kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(384,256,kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256,256,kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+        )
 
-        self.roi_pool = RoIPool(7, 7, 1.0/16)        
-        self.fc6 = FC(512 * 7 * 7, 4096)
-        self.fc7 = FC(4096, 4096)
+        self.roi_pool = RoIPool(7, 7, 1.0/16)   
 
-        self.fc8 = FC(4096, self.n_classes, relu=False)
+        self.classifiers = nn.Sequential(
+            nn.Linear(256*7*7, 4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.3),
+            nn.Linear(4096, 4096),
+            nn.ReLU(inplace=True),
+        )     
+
+        self.score = nn.Linear(4096, self.n_classes)
+        self.det = nn.Linear(4096, self.n_classes)
 
         # loss
         self.cross_entropy = None
@@ -96,15 +115,12 @@ class WSDDN(nn.Module):
 
         pooled_features = self.roi_pool(features, rois)
         x = pooled_features.view(pooled_features.size()[0], -1)
-        x = self.fc6(x)
-        x = F.dropout(x, training=self.training)
-        x = self.fc7(x)
-        x = F.dropout(x, training=self.training)
+        x = self.classifiers(x)
 
-        cls_score = self.fc8(x)
-        det_score = self.fc8(x)
-        cls_prob = softmax(cls_score)
-        det_prob = softmax(det_score, axis=0)
+        cls_score = self.score(x)
+        det_score = self.det(x)
+        cls_prob = F.softmax(cls_score, dim=1)
+        det_prob = F.softmax(det_score, dim=0)
 
         cls_prob = cls_prob*det_prob
         
@@ -114,7 +130,7 @@ class WSDDN(nn.Module):
             label_vec = label_vec.view(-1,self.n_classes)
             self.cross_entropy = self.build_loss(cls_prob, label_vec)
 
-        cls_prob = torch.sum(cls_prob, dim=0).view(-1,self.n_classes)
+        # cls_prob = torch.sum(cls_prob, dim=0).view(-1,self.n_classes)
         return cls_prob
 
     def build_loss(self, cls_prob, label_vec):
@@ -128,8 +144,9 @@ class WSDDN(nn.Module):
         #TODO: Compute the appropriate loss using the cls_prob that is the
         #output of forward()
         #Checkout forward() to see how it is called 
-        label_vec_rep = label_vec.repeat(cls_prob.size()[0],1)
-        bceloss = F.binary_cross_entropy(cls_prob, label_vec_rep)
+        cls_prob = torch.sum(cls_prob, dim=0)
+        # label_vec_rep = label_vec.repeat(cls_prob.size()[0],1)
+        bceloss = F.binary_cross_entropy(cls_prob, label_vec)
 
         return bceloss
 
