@@ -23,4 +23,5 @@ class Logger(object):
         # self.writer.add_histogram_raw(tag, min=np.min(data), max=np.max(data), num=np.size(data), sum=np.sum(data), sum_squares=np.sum(np.multiply(data,data)), bucket_limits=bin_edges, bucket_counts=hist, global_step=iteration)
 
     def vis_img(self,img, title):
+        img = img.astype(np.uint8)
         self.vis.image(img, opts=dict(title=title,caption=title))

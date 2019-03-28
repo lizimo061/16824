@@ -242,6 +242,8 @@ def main():
         # evaluate on validation set
         if epoch % args.eval_freq == 0 or epoch == args.epochs - 1:
             m1, m2 = validate(val_loader, model, criterion, trainval_imdb, logger)
+            logger.scalar_summary("validate/metric1",m1,epoch)
+            logger.scalar_summary("validate/metric2",m2,epoch)
             score = m1 * m2
             # remember best prec@1 and save checkpoint
             is_best = score > best_prec1
@@ -424,9 +426,9 @@ def validate(val_loader, model, criterion,db,logger=None):
         losses.update(loss.data[0], input.size(0))
         avg_m1.update(m1[0], input.size(0))
         avg_m2.update(m2[0], input.size(0))
-        if logger!=None:
-            logger.scalar_summary("validate/metric1",avg_m1.avg,i)
-            logger.scalar_summary("validate/metric2",avg_m2.avg,i)
+        # if logger!=None:
+        #     logger.scalar_summary("validate/metric1",avg_m1.avg,i)
+        #     logger.scalar_summary("validate/metric2",avg_m2.avg,i)
 
         # measure elapsed time
         batch_time.update(time.time() - end)
