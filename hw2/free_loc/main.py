@@ -128,7 +128,6 @@ parser.add_argument('--vis', action='store_true')
 best_prec1 = 0
 
 def denormalize(image):
-    print(image.shape)
     mean = torch.tensor([0.485, 0.456, 0.406],dtype=torch.float32)
     std = torch.tensor([0.229, 0.224, 0.225],dtype=torch.float32)
 

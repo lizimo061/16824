@@ -73,12 +73,13 @@ class WSDDN(nn.Module):
             nn.ReLU(inplace=True),
         )
 
-        self.roi_pool = RoIPool(7, 7, 1.0/16)   
+        self.roi_pool = RoIPool(6, 6, 1.0/16)   
 
-        self.classifiers = nn.Sequential(
-            nn.Linear(256*7*7, 4096),
+        self.classifier = nn.Sequential(
+            nn.Dropout(p=0),
+            nn.Linear(9216, 4096),
             nn.ReLU(inplace=True),
-            nn.Dropout(p=0.3),
+            nn.Dropout(p=0.5),
             nn.Linear(4096, 4096),
             nn.ReLU(inplace=True),
         )     
@@ -115,7 +116,7 @@ class WSDDN(nn.Module):
 
         pooled_features = self.roi_pool(features, rois)
         x = pooled_features.view(pooled_features.size()[0], -1)
-        x = self.classifiers(x)
+        x = self.classifier(x)
 
         cls_score = self.score(x)
         det_score = self.det(x)
