@@ -121,7 +121,7 @@ class WSDDN(nn.Module):
         det_score = self.det(x)
         cls_prob = F.softmax(cls_score, dim=1)
         det_prob = F.softmax(det_score, dim=0)
-
+        
         cls_prob = cls_prob*det_prob
         
 
@@ -145,8 +145,11 @@ class WSDDN(nn.Module):
         #output of forward()
         #Checkout forward() to see how it is called 
         cls_prob = torch.sum(cls_prob, dim=0)
-        # label_vec_rep = label_vec.repeat(cls_prob.size()[0],1)
-        bceloss = F.binary_cross_entropy(cls_prob, label_vec)
+        cls_prob = torch.clamp(cls_prob, min=0, max=1)
+        # bceloss = F.binary_cross_entropy(cls_prob, label_vec)
+        criterion = nn.BCELoss()
+        # print(cls_prob)
+        bceloss = criterion(cls_prob, label_vec)
 
         return bceloss
 

@@ -364,7 +364,7 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
 
                 # For original image
                 title = str(epoch) + "_" + str(iter_num) + "_" + str(i) + "_image_" + str(ind)
-                logger.img_summary("train/img",img,iter_num)
+                logger.img_summary("train/img/"+ title,img,iter_num)
                 logger.vis_img(img, title)
 
                 #For heat map
@@ -383,7 +383,7 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
                     heat_map = np.uint8(cm.jet(np.array(heat_map))*255)
                     heat_map = np.transpose(heat_map, axes=(2,0,1))
 
-                    logger.img_summary("train/heat_map",heat_map,iter_num)
+                    logger.img_summary("train/heat_map/"+ title,heat_map,iter_num)
 
                     logger.vis_img(heat_map, title)
 
@@ -426,7 +426,8 @@ def validate(val_loader, model, criterion,db,logger=None):
         avg_m1.update(m1[0], input.size(0))
         avg_m2.update(m2[0], input.size(0))
         if logger!=None:
-            logger.scalar_summary("test/mAP",avg_m1.avg,i)
+            logger.scalar_summary("validate/metric1",avg_m1.avg,i)
+            logger.scalar_summary("validate/metric2",avg_m2.avg,i)
 
         # measure elapsed time
         batch_time.update(time.time() - end)
@@ -448,7 +449,7 @@ def validate(val_loader, model, criterion,db,logger=None):
         #TODO: Visualize things as mentioned in handout
         #TODO: Visualize at appropriate intervals
         if i<20 and logger!=None:
-            img = input_var[0,:,:,:]
+            img = denormalize(input_var[0,:,:,:])
             tmp_heat = output[0,:,:,:]
             gt_class = target[0,:]
             img = img.data.numpy()
@@ -459,7 +460,7 @@ def validate(val_loader, model, criterion,db,logger=None):
                 
             # For original image
             title = "validate_" + str(i) + "_image" 
-            logger.img_summary("validate/img",img,i)
+            logger.img_summary("validate/img/" + title,img,i)
             logger.vis_img(img, title)
             for cla in range(tmp_heat.shape[0]):
                 heat = tmp_heat[cla,:,:]
@@ -476,7 +477,7 @@ def validate(val_loader, model, criterion,db,logger=None):
                 heat_map = np.uint8(cm.jet(np.array(heat_map))*255)
                 heat_map = np.transpose(heat_map, axes=(2,0,1))
 
-                logger.img_summary("validate/heat_map",heat_map,i)
+                logger.img_summary("validate/heat_map/" + title,heat_map,i)
                     
                 logger.vis_img(heat_map, title)
 
@@ -537,9 +538,10 @@ def metric1(output, target):
         if len(np.nonzero(gt_cls)[0])!=0:
             pred_cls -= 1e-5 * gt_cls
             ap = sklearn.metrics.average_precision_score(gt_cls,pred_cls)
+            AP.append(ap)
         else:
             ap = 0
-        AP.append(ap)
+        
 
     mAP = sum(AP)/len(AP)
     return [mAP]
@@ -547,22 +549,18 @@ def metric1(output, target):
 
 def metric2(output, target):
     #TODO: Ignore for now - proceed till instructed
-    auc = []
+    score = []
     nclasses = target.shape[1]
     target = target.cpu().numpy()
     output = output.cpu().numpy()
     
-    for cid in range(nclasses):
-        gt_cls = target[:,cid].astype('float32')
-        pred_cls = output[:,cid].astype('float32')
+    for i in range(target.shape[0]):
+        output_1d = output[i,:]
+        target_1d = target[i,:]
+        output_1d = np.where(output_1d>0.01,1,0)
+        score.append(sklearn.metrics.f1_score(target_1d,output_1d,average='weighted'))
 
-        if len(np.nonzero(gt_cls)[0])!=0:
-            pred_cls -= 1e-5 * gt_cls
-            auc_tmp = sklearn.metrics.roc_auc_score(gt_cls,pred_cls)
-        else:
-            auc_tmp = 0
-        auc.append(auc_tmp)
-    return [np.mean(auc)]
+    return [np.mean(score)]
 
 
 if __name__ == '__main__':

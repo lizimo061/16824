@@ -53,10 +53,11 @@ def get_weak_minibatch(roidb, num_classes):
                            num_classes)
         #TODO: same as get_minibatch, but we only use the image-level labels
         #So blobs['labels'] should contain a 1x20 binary vector for each image
+        labels = roidb[im_i]['gt_classes']
         label_tmp = np.zeros((1,num_classes), dtype=np.float32)
         label_tmp[:,labels[np.nonzero(labels)]-1] = 1
         labels_blob = np.vstack((labels_blob, label_tmp))
-
+        np.set_printoptions(threshold=np.inf)
         rois = _project_im_rois(im_rois, im_scales[im_i])
         batch_ind = im_i * np.ones((rois.shape[0], 1))
         rois_blob_this_image = np.hstack((batch_ind, rois))

@@ -47,7 +47,7 @@ if rand_seed is not None:
 cfg_from_file(cfg_file)
 
 
-def vis_detections(im, class_name, dets, thresh=0.8):
+def vis_detections(im, class_name, dets, thresh=0.001):
     """Visual debugging of detections."""
     for i in range(np.minimum(10, dets.shape[0])):
         bbox = tuple(int(np.round(x)) for x in dets[i, :4])
@@ -96,7 +96,7 @@ def test_net(name,
              net,
              imdb,
              max_per_image=300,
-             thresh=0.05,
+             thresh=0.00001,
              visualize=False,
              logger=None,
              step=None):
@@ -118,12 +118,11 @@ def test_net(name,
 
     for i in range(num_images):
         im = cv2.imread(imdb.image_path_at(i))
+        im = im[:, :, (2, 1, 0)].copy()
         rois = imdb.roidb[i]['boxes']
         _t['im_detect'].tic()
-        net.training = False
         scores, boxes = im_detect(net, im, rois)
         detect_time = _t['im_detect'].toc(average=False)
-        net.training = True
         _t['misc'].tic()
         if visualize:
             # im2show = np.copy(im[:, :, (2, 1, 0)])
@@ -140,8 +139,9 @@ def test_net(name,
             keep = nms(cls_dets, cfg.TEST.NMS)
             cls_dets = cls_dets[keep, :]
             if visualize:
-                im2show = vis_detections(im2show, imdb.classes[newj], cls_dets, thresh=0.35)
+                im2show = vis_detections(im2show, imdb.classes[newj], cls_dets)
             all_boxes[j][i] = cls_dets
+
 
         # Limit to max_per_image detections *over all classes*
         if max_per_image > 0:
@@ -161,7 +161,7 @@ def test_net(name,
             # TODO: Visualize here using tensorboard
             # TODO: use the logger that is an argument to this function
             im2show = im.transpose(2,0,1)
-            logger.img_summary("result_img"+str(i), im2show, step)
+            logger.img_summary("result_img/"+str(i), im2show, step)
 
 
     with open(det_file, 'wb') as f:
