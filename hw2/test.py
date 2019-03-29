@@ -15,6 +15,7 @@ import network
 from wsddn import WSDDN
 from utils.timer import Timer
 from fast_rcnn.nms_wrapper import nms
+import matplotlib.pyplot as plt 
 
 from fast_rcnn.bbox_transform import bbox_transform_inv, clip_boxes
 from datasets.factory import get_imdb
@@ -47,7 +48,7 @@ if rand_seed is not None:
 cfg_from_file(cfg_file)
 
 
-def vis_detections(im, class_name, dets, thresh=0.001):
+def vis_detections(im, class_name, dets, thresh=0):
     """Visual debugging of detections."""
     for i in range(np.minimum(10, dets.shape[0])):
         bbox = tuple(int(np.round(x)) for x in dets[i, :4])
@@ -160,8 +161,12 @@ def test_net(name,
         if visualize and np.random.rand() < 0.01:
             # TODO: Visualize here using tensorboard
             # TODO: use the logger that is an argument to this function
-            im2show = im.transpose(2,0,1)
-            logger.img_summary("result_img/"+str(i), im2show, step)
+            # im2show = im.transpose(2,0,1)
+            # logger.img_summary("result_img/"+str(i), [im2show], step)
+            fig = plt.figure()
+            plt.imshow(im2show)
+            logger.writer.add_figure("test_img"+str(i), fig, step)
+
 
 
     with open(det_file, 'wb') as f:

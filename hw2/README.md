@@ -193,7 +193,7 @@ When you're logging to Tensorboard, make sure you use good tag names. For exampl
 
 ### We're ready to train now!
 
-#### Q 1.5 Initialize the model from ImageNet (till the conv5 layer), initialize the rest of layers with xavier initialization and train the model using batchsize=32, learning rate=0.01, epochs=30. Evaluate every 2 epochs. (Hint: also try lr=0.1 - best value varies with implementation of loss) \[Expected training time: 45mins-75mins].
+#### Q 1.6 Initialize the model from ImageNet (till the conv5 layer), initialize the rest of layers with xavier initialization and train the model using batchsize=32, learning rate=0.01, epochs=30. Evaluate every 2 epochs. (Hint: also try lr=0.1 - best value varies with implementation of loss) \[Expected training time: 45mins-75mins].
 - IMPORTANT: FOR ALL EXPERIMENTS FROM HERE - ENSURE THAT THE SAME IMAGES ARE PLOTTED ACROSS EXPERIMENTS BY KEEPING THE SAMPLED BATCHES IN THE SAME ORDER. THIS CAN BE DONE BY FIXING THE RANDOM SEEDS BEFORE CREATING DATALOADERS.
 - Use Tensorboard to plot the training loss curve, training ``metric1``, training ``metric2``
 - Use Tensorboard to plot the mean validation ``metric1`` and mean validation ``metric2`` for every 2 epochs.
@@ -204,17 +204,17 @@ When you're logging to Tensorboard, make sure you use good tag names. For exampl
 - Report the training loss, training and validation ``metric1`` and ``metric2`` achieved at the end of training (in the report). 
 
 
-#### Q 1.6 In the heatmap visualizations you observe that there are usually peaks on salient features of the objects but not on the entire objects. How can you fix this in the architecture of the model? (Hint: during training the max-pool operation picks the most salient location). Implement this new model in ``LocalizerAlexNetRobust`` and also implement the corresponding ``localizer_alexnet_robust()``. Train the model using batchsize=32, learning rate=0.01, epochs=45. Evaluate every 2 epochs.(Hint: also try lr=0.1 - best value varies with implementation of loss)
+#### Q 1.7 In the heatmap visualizations you observe that there are usually peaks on salient features of the objects but not on the entire objects. How can you fix this in the architecture of the model? (Hint: during training the max-pool operation picks the most salient location). Implement this new model in ``LocalizerAlexNetRobust`` and also implement the corresponding ``localizer_alexnet_robust()``. Train the model using batchsize=32, learning rate=0.01, epochs=45. Evaluate every 2 epochs.(Hint: also try lr=0.1 - best value varies with implementation of loss)
 - For this question only visualize images and heatmaps using Tensorboard at similar intervals as before (ensure that the same images are plotted). 
 - You don't have to plot the rest of the quantities that you did for previous questions (if you haven't put flags to turn off logging the other quantities, it's okay to log them too - just don't add them to the report).
-- In Tensorboard, you can display questions Q1.5 and Q1.6 side by side. This will help you visualize and see if your predictions are improving. 
-- At the end of training, use Visdom to plot 20 randomly chosen images (same images as Q1.5) and corresponding heatmaps from the validation set.
+- In Tensorboard, you can display questions Q1.6 and Q1.7 side by side. This will help you visualize and see if your predictions are improving. 
+- At the end of training, use Visdom to plot 20 randomly chosen images (same images as Q1.6) and corresponding heatmaps from the validation set.
 - Report the training loss, training and validation ``metric1`` and ``metric2`` achieved at the end of training (in the report). 
 
-#### Q 1.7 (Extra credit - do this only after Task 2) The outputs of the model from Q1.6 are score maps (or heat maps). Try to come up with a reasonable algorithm to predict a bounding box from the heatmaps. 
+#### Q 1.8 (Extra credit - do this only after Task 2) The outputs of the model from Q1.6/Q1.7 are score maps (or heat maps). Try to come up with a reasonable algorithm to predict a bounding box from the heatmaps. 
 - Write the code for this in ``main.py``. 
 - Visualize 20 validation images (using anything) with bounding boxes for the ground truth classes (assume that you know which classes exist in the image - plot boxes only for GT classes using the GT labels). 
-- Note that there is no training involved in this step. Just use the pretrained model from Q1.6.
+- Note that there is no training involved in this step. Just use the pretrained model from Q1.6/Q1.7.
 - Evaluate the mAP on the validation set using the new bounding box predictor that you have created (hopefully you know how to do it using IMDBs). The performance will be bad, but don't worry about it. 
 
 
@@ -269,7 +269,7 @@ Regularly check the piazza handout post for additional hints and changes.
 - [ ] Q1.1 describe functionality of the completed TODO blocks
 - [ ] Answer Q1.2
 - [ ] Answer Q1.4
-- [ ] Answer Q1.5 and describe functionality of the completed TODO blocks
+- [ ] Answer Q1.6 and describe functionality of the completed TODO blocks
 	- [ ] Add screenshot of tensor board metric1, metric2 on the training set
 	- [ ] Add screenshot of tensor board metric1, metric2 on the validation set
 	- [ ] Screenshot of tensor board showing images and heat maps for the first logged epoch
@@ -279,10 +279,10 @@ Regularly check the piazza handout post for additional hints and changes.
 	- [ ] Visdom screenshot for 20 randomly chosen validation images and heat maps
 	- [ ] Report training loss, validation metric1, validation metric2 at the end of training
 
-- [ ] Answer Q1.6 and describe functionality of the completed TODO blocks
-	- [ ] Screenshot of tensor board showing images and heat maps for the first logged epoch \*for Q1.5 and Q1.6 side-by-side\*.
-	- [ ] Screenshot of tensor board showing images and heat maps for the last logged epoch \*for Q1.5 and Q1.6 side-by-side\*.
-	- [ ] Visdom screenshot for 20 randomly chosen validation images (but same images as Q1.5) and heat maps
+- [ ] Answer Q1.7 and describe functionality of the completed TODO blocks
+	- [ ] Screenshot of tensor board showing images and heat maps for the first logged epoch \*for Q1.6 and Q1.7 side-by-side\*.
+	- [ ] Screenshot of tensor board showing images and heat maps for the last logged epoch \*for Q1.6 and Q1.7 side-by-side\*.
+	- [ ] Visdom screenshot for 20 randomly chosen validation images (but same images as Q1.6) and heat maps
 	- [ ] Report training loss, validation metric1, validation metric2 at the end of training
 
 ### Task 2
@@ -292,16 +292,16 @@ Regularly check the piazza handout post for additional hints and changes.
 - [ ] Q2.4 visdom downloaded image of test mAP vs iterations plot
 - [ ] Q2.4 tensorboard screenshot for class-wise APs vs iterations showing 3 or more classes
 - [ ] Q2.4 tensor board screenshot of images with predicted boxes for the first logged iteration (5000)
-- [ ] Q2.4 tensor board screenshot of images with predicted boxes for the last logged iteration (50000 or 45000)
+- [ ] Q2.4 tensor board screenshot of images with predicted boxes for the last logged iteration (30000 or 25000)
 - [ ] Q2.4 report final classwise APs on the test set and mAP on the test set
 
 ## Other Data
 - [ ] code folder
 - [ ] Folder called “freeloc”
-	- [ ] tensor board file for Q1.5
-	- [ ] Final model file for Q1.5
 	- [ ] tensor board file for Q1.6
 	- [ ] Final model file for Q1.6
+	- [ ] tensor board file for Q1.7
+	- [ ] Final model file for Q1.7
 - [ ] Folder called “WSDDN”
 	- [ ] tensor board file for Q2.4
 	- [ ] Final model file for Q2.4

@@ -47,7 +47,7 @@ output_dir = 'models/saved_model'
 visualize = True
 vis_interval = 500
 grad_interval = 2000
-eval_interval = 5000
+eval_interval = 50
 
 start_step = 0
 end_step = 30000
