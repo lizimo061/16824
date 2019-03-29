@@ -56,7 +56,7 @@ lr_decay = 1. / 10
 
 rand_seed = 1024
 _DEBUG = False
-use_tensorboard = False
+use_tensorboard = True
 use_visdom = False
 log_grads = False
 
@@ -108,7 +108,7 @@ for name, param in pret_net.items():
 
 log_path = os.path.join("./wsddn_log/",datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 os.makedirs(log_path)
-logger = Logger(log_path,'http://localhost','8097')
+logger = Logger(log_path,'http://localhost','8097',use_visdom=True)
 
 # Move model to GPU and set train mode
 net.load_state_dict(own_state)
@@ -125,6 +125,7 @@ if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
 # training
+firstFlag = True
 train_loss = 0
 tp, tf, fg, bg = 0., 0., 0, 0
 step_cnt = 0
@@ -151,7 +152,7 @@ for step in range(start_step, end_step + 1):
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
-    
+
     # Log to screen
     if step % disp_interval == 0:
         duration = t.toc(average=False)
@@ -167,32 +168,37 @@ for step in range(start_step, end_step + 1):
         net.eval()
         aps = test_net("test",net,test_imdb,visualize=True,logger=logger,step=step)
         logger.scalar_summary("test/map",np.mean(aps),step)
+
+        if logger.vis!=None:
+            if firstFlag:
+                logger.vis.line(X = np.array([step]), Y = np.array([np.mean(aps)]), win="test/mAP", opts=dict(title='Test mAP'))
+                firstFlag = False
+            else:
+                logger.vis.line(X = np.array([step]), Y = np.array([np.mean(aps)]), win="test/mAP", update="append", opts=dict(title='Test mAP'))
         net.train()
 
-    
     #TODO: Perform all visualizations here
     #You can define other interval variable if you want (this is just an
     #example)
     #The intervals for different things are defined in the handout
     if visualize and step % vis_interval == 0:
         #TODO: Create required visualizations
-        logger.scalar_summary("train/loss",loss.data[0],step)
-        logger.scalar_summary("train/loss_avg",loss.data[0],step)
+        # logger.scalar_summary("train/loss",loss.data[0],step)
         if use_tensorboard:
             print('Logging to Tensorboard')
-            logger.scalar_summary("train/loss",train_loss / step_cnt,step)
+            logger.scalar_summary("train/loss",loss.data[0],step)
         if use_visdom:
             print('Logging to visdom')
 
-    # if visualize and step % grad_interval == 0:
-    #     for tag, params in net.named_parameters():
-    #         if params.grad is None:
-    #             continue
-    #         tag = tag.replace('.','/')
-    #         weights = params.data
-    #         gradients = params.grad.data
-    #         logger.hist_summary(tag, weights, step)
-    #         logger.hist_summary(tag+'/grad', gradients, step)
+    if visualize and step % grad_interval == 0:
+        for tag, params in net.named_parameters():
+            if params.grad is None:
+                continue
+            tag = tag.replace('.','/')
+            weights = params.data
+            gradients = params.grad.data
+            logger.hist_summary(tag, weights, step)
+            logger.hist_summary(tag+'/grad', gradients, step)
 
 
     # Save model occasionally

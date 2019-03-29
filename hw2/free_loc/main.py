@@ -366,7 +366,9 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
                 # For original image
                 title = str(epoch) + "_" + str(iter_num) + "_" + str(i) + "_image_" + str(ind)
                 logger.img_summary("train/img/"+ title,img,iter_num)
-                logger.vis_img(img, title)
+                img_vis = (img - np.min(img))/(np.max(img)-np.min(img))
+                img_vis = np.uint8(img_vis*255)
+                logger.vis_img(img_vis, title)
 
                 #For heat map
                 for cla in range(tmp_heat.shape[0]):
@@ -462,7 +464,10 @@ def validate(val_loader, model, criterion,db,logger=None):
             # For original image
             title = "validate_" + str(i) + "_image" 
             logger.img_summary("validate/img/" + title,img,i)
-            logger.vis_img(img, title)
+            img_vis = (img - np.min(img))/(np.max(img)-np.min(img))
+            img_vis = np.uint8(img_vis*255)
+            logger.vis_img(img_vis, title)
+
             for cla in range(tmp_heat.shape[0]):
                 heat = tmp_heat[cla,:,:]
                 title = "validate_" + str(i) + "_heatmap_" + db.classes[gt_class[cla]-1]
