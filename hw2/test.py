@@ -48,7 +48,7 @@ if rand_seed is not None:
 cfg_from_file(cfg_file)
 
 
-def vis_detections(im, class_name, dets, thresh=0):
+def vis_detections(im, class_name, dets, thresh=0.08):
     """Visual debugging of detections."""
     for i in range(np.minimum(10, dets.shape[0])):
         bbox = tuple(int(np.round(x)) for x in dets[i, :4])
@@ -165,7 +165,7 @@ def test_net(name,
             # logger.img_summary("result_img/"+str(i), [im2show], step)
             fig = plt.figure()
             plt.imshow(im2show)
-            logger.writer.add_figure("test_img"+str(i), fig, step)
+            logger.writer.add_figure("result_img/"+str(i), fig, step)
 
 
 

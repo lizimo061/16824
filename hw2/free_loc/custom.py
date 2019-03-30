@@ -4,6 +4,7 @@ import torch.utils.model_zoo as model_zoo
 model_urls = {
         'alexnet': 'https://download.pytorch.org/models/alexnet-owt-4df8aa71.pth',
 }
+import torch.nn.functional as F
 
 from PIL import Image
 import os
@@ -142,13 +143,14 @@ class LocalizerAlexNetRobust(nn.Module):
             nn.Conv2d(256,256,kernel_size=1,stride=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(256,num_classes,kernel_size=1,stride=1),
-            nn.Dropout2d(p=0.4,inplace=True)
+            # nn.Dropout2d(p=0.4,inplace=True)
         )
 
     def forward(self, x):
         #TODO: Define forward pass
         x = self.features(x)
         x = self.classifier(x)
+        x = F.avg_pool2d(x,(3,3))
 
         return x
 

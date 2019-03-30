@@ -318,14 +318,14 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
         loss.backward()
         optimizer.step()
 
-        for tag, params in model.named_parameters():
-            if params.grad is None:
-                continue
-            tag = tag.replace('.','/')
-            weights = params.data
-            gradients = params.grad.data
-            logger.hist_summary(tag, weights, iter_num)
-            logger.hist_summary(tag+'/grad', gradients, iter_num)
+        # for tag, params in model.named_parameters():
+        #     if params.grad is None:
+        #         continue
+        #     tag = tag.replace('.','/')
+        #     weights = params.data
+        #     gradients = params.grad.data
+        #     logger.hist_summary(tag, weights, iter_num)
+        #     logger.hist_summary(tag+'/grad', gradients, iter_num)
 
 
         # measure elapsed time
@@ -373,7 +373,7 @@ def train(train_loader, model, criterion, optimizer, epoch, db, logger=None):
                 #For heat map
                 for cla in range(tmp_heat.shape[0]):
                     heat = tmp_heat[cla,:,:]
-                    title = str(epoch) + "_" + str(iter_num) + "_" + str(i) + "_heatmap_" + db.classes[gt_class[cla]-1] + "_" + str(ind)
+                    title = str(epoch) + "_" + str(iter_num) + "_" + str(i) + "_heatmap_" + db.classes[gt_class[cla]] + "_" + str(ind)
 
                     heat = (heat - np.min(heat))/(np.max(heat)-np.min(heat))
 
@@ -451,6 +451,7 @@ def validate(val_loader, model, criterion,db,logger=None):
 
         #TODO: Visualize things as mentioned in handout
         #TODO: Visualize at appropriate intervals
+
         if i<20 and logger!=None:
             img = denormalize(input_var[0,:,:,:])
             tmp_heat = output[0,:,:,:]
@@ -470,7 +471,7 @@ def validate(val_loader, model, criterion,db,logger=None):
 
             for cla in range(tmp_heat.shape[0]):
                 heat = tmp_heat[cla,:,:]
-                title = "validate_" + str(i) + "_heatmap_" + db.classes[gt_class[cla]-1]
+                title = "validate_" + str(i) + "_heatmap_" + db.classes[gt_class[cla]]
                     
                 heat = (heat - np.min(heat))/(np.max(heat)-np.min(heat))
 
