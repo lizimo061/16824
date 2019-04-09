@@ -187,8 +187,7 @@ def main():
     trainval_imdb = get_imdb('voc_2007_trainval')
     test_imdb = get_imdb('voc_2007_test')
 
-    normalize = transforms.Normalize(
-        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
 
     train_dataset = IMDBDataset(

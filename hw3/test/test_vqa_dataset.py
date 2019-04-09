@@ -2,7 +2,7 @@ import unittest
 import os
 from torch.utils.data import DataLoader
 from student_code.vqa_dataset import VqaDataset
-
+import matplotlib.pyplot as plt
 
 class TestVqaDataset(unittest.TestCase):
 
@@ -48,4 +48,13 @@ class TestVqaDataset(unittest.TestCase):
         # Act & Assert - the test will fail if iterating through the data loader fails
         for id, data in enumerate(dataset_loader):
             # Not doing anything here. Feel free to fill this in, if you like.
-            pass
+
+            # Test the image visualizations
+            img = data['images'][1,:,:,:]
+            img = img.numpy().transpose((1,2,0))
+            plt.imshow(img)
+            plt.show()
+
+            # Test BoW representations
+            print(data['answers'])
+            print(data['questions'])
