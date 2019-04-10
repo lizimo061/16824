@@ -33,7 +33,7 @@ class ExperimentRunnerBase(object):
 
     def validate(self):
         # TODO. Should return your validation accuracy
-        raise NotImplementedError()
+        
 
     def train(self):
 
@@ -47,8 +47,10 @@ class ExperimentRunnerBase(object):
                 # ============
                 # TODO: Run the model and get the ground truth answers that you'll pass to your optimizer
                 # This logic should be generic; not specific to either the Simple Baseline or CoAttention.
-                predicted_answer = None # TODO
-                ground_truth_answer = None # TODO
+                question_vec = batch_data['question']
+                images = batch_data['images']
+                predicted_answer = self._model(images,question_vec) # TODO
+                ground_truth_answer = batch_data['answers'] # TODO
                 # ============
 
                 # Optimize the model according to the predictions

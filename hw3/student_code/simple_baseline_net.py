@@ -7,6 +7,7 @@ class SimpleBaselineNet(nn.Module):
     """
     def __init__(self, vocab_size, embedding_size, hidden_size):
         super().__init__()
+
         self.vocab_size = vocab_size
         self.embedding_size = embedding_size
         self.hidden_size = hidden_size
@@ -18,8 +19,7 @@ class SimpleBaselineNet(nn.Module):
         self.embedding = nn.Embedding(self.vocab_size, self.embedding_size)
         self.lstm = nn.LSTM(self.embedding_size, self.hidden_size, dropout=0.2)
 
-
-     
+        self.softmax = nn.Softmax()
 
     def forward(self, image, question_encoding):
         # TODO
@@ -29,5 +29,5 @@ class SimpleBaselineNet(nn.Module):
 		word_features = nn.utils.run.pack_padded_sequence(output, batch_first=True)
 
 		features = torch.cat((image_features,word_features),1)
-
-		return features
+		answers = self.softmax(features)
+		return answers

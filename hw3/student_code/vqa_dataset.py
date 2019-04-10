@@ -33,6 +33,9 @@ class VqaDataset(Dataset):
         self.quesWordToIdx = self.BoWPool(self.quesWords)
         self.ansWordToIdx = self.BoWPool(self.ansWords)
 
+        self.quesVecSize = len(self.quesWordToIdx)
+
+
     def imgIdToPath(self, idx):
         str_bracket = "{}"
         start_idx = self.image_filename_pattern.find(str_bracket)
@@ -105,6 +108,7 @@ class VqaDataset(Dataset):
         ])
 
         data['images'] = trans(tmp_img)
+    
 
         return data
 
