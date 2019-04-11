@@ -34,6 +34,9 @@ class ExperimentRunnerBase(object):
     def validate(self):
         # TODO. Should return your validation accuracy
         
+        for batch_id, batch_data in enumerate(self._val_dataset_loader):
+
+            
 
     def train(self):
 

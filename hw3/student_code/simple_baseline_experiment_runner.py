@@ -1,7 +1,7 @@
 from student_code.simple_baseline_net import SimpleBaselineNet
 from student_code.experiment_runner_base import ExperimentRunnerBase
 from student_code.vqa_dataset import VqaDataset
-
+import torch.optim as optim
 
 class SimpleBaselineExperimentRunner(ExperimentRunnerBase):
     """
@@ -24,6 +24,10 @@ class SimpleBaselineExperimentRunner(ExperimentRunnerBase):
 
         super().__init__(train_dataset, val_dataset, model, batch_size, num_epochs, num_data_loader_workers)
 
+        self.optimizer = optim..SGD([
+                                {'params': model.}]) 
+        # TODO_private
+
     def _optimize(self, predicted_answers, true_answer_ids):
         # TODO
-        raise NotImplementedError()
+        optimizer = optim
