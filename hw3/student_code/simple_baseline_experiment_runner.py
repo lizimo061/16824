@@ -24,10 +24,17 @@ class SimpleBaselineExperimentRunner(ExperimentRunnerBase):
 
         super().__init__(train_dataset, val_dataset, model, batch_size, num_epochs, num_data_loader_workers)
 
-        self.optimizer = optim..SGD([
-                                {'params': model.}]) 
+        self.optimizer = optim.SGD([
+                                {'params': model.img_features.parameters(), 'lr': 1e-2},
+                                {'params': model.embedding.parameters(), 'lr': 1e-2},
+                                {'params': model.softmax.parameters()}], lr=1e-3, momentum=0.9) 
         # TODO_private
 
     def _optimize(self, predicted_answers, true_answer_ids):
         # TODO
-        optimizer = optim
+        self.optimizer.zero_grad()
+
+        #Getting loss here
+
+        loss.backward()
+        self.optimizer.step()        
