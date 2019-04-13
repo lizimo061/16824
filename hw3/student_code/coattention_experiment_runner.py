@@ -1,7 +1,7 @@
 from student_code.coattention_net import CoattentionNet
 from student_code.experiment_runner_base import ExperimentRunnerBase
 from student_code.vqa_dataset import VqaDataset
-
+import torch
 
 class CoattentionNetExperimentRunner(ExperimentRunnerBase):
     """
@@ -25,6 +25,17 @@ class CoattentionNetExperimentRunner(ExperimentRunnerBase):
         super().__init__(train_dataset, val_dataset, self._model, batch_size, num_epochs,
                          num_data_loader_workers=num_data_loader_workers)
 
+        self.optimizer = #TODO
+
     def _optimize(self, predicted_answers, true_answer_ids):
         # TODO
-        raise NotImplementedError()
+        self.optimizer.zero_grad()
+
+        criterion = torch.nn.CrossEntropyLoss()
+
+        loss = criterion(predicted_answers, true_answer_ids)
+        loss.backward()
+        self.optimizer.step()
+
+        return loss
+
