@@ -56,5 +56,6 @@ class TestVqaDataset(unittest.TestCase):
             plt.show()
 
             # Test BoW representations
-            print(data['answers'])
-            print(data['questions'])
+            print("answers ",data['answers'])
+            print("questions ",data['questions'])
+            print("gt_answer ",data['gt_answer'])
