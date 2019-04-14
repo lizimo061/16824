@@ -1,5 +1,5 @@
 import torch.nn as nn
-
+import torch.nn.functional as F
 
 class CoattentionNet(nn.Module):
     """
@@ -11,4 +11,7 @@ class CoattentionNet(nn.Module):
 
     def forward(self, image, question_encoding):
         # TODO
-        raise NotImplementedError()
+
+        # If preprocessed:
+        
+
