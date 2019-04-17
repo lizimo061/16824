@@ -31,16 +31,17 @@ class CoattentionNetExperimentRunner(ExperimentRunnerBase):
         self._model = CoattentionNet(embed_size, vocab_size, ans_size, seq_len)
 
         super().__init__(train_dataset, val_dataset, self._model, batch_size, num_epochs,
-                         num_data_loader_workers=num_data_loader_workers)
+                         num_data_loader_workers, preprocessing)
 
-        self.optimizer = torch.optim.RMSprop(self._model.parameters(), lr=4e-4, momentum=0.99, weight_decay=1e-8) 
+        # self.optimizer = torch.optim.RMSprop(self._model.parameters(), lr=4e-4, momentum=0.99, weight_decay=1e-8) 
+        self.optimizer = torch.optim.SGD(self._model.parameters(), lr=1e-3, momentum=0.9, weight_decay=1e-8)
 
     def _optimize(self, predicted_answers, true_answer_ids):
         # TODO
         self.optimizer.zero_grad()
 
-        criterion = torch.nn.CrossEntropyLoss()
-
+        # criterion = torch.nn.CrossEntropyLoss()
+        criterion = torch.nn.NLLLoss()
         loss = criterion(predicted_answers, true_answer_ids)
         loss.backward()
         self.optimizer.step()

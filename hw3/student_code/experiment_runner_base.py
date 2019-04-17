@@ -26,6 +26,7 @@ class ExperimentRunnerBase(object):
         log_path = os.path.join("./log/",datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
         self.writer = SummaryWriter(log_dir=log_path)
         self.prepro = preprocessing
+        print("ExperimentRunnerBase preprocess: ", self.prepro)
         if self._cuda:
             self._model = self._model.cuda()
 
@@ -52,8 +53,7 @@ class ExperimentRunnerBase(object):
         	correct_count += correct_item.item()
         	total_count += predicted_answer.shape[0]
 
-        	# print(correct_count)
-        # print("total_count :", total_count)
+
         if total_count == 0:
         	return -1
         else:
@@ -73,8 +73,6 @@ class ExperimentRunnerBase(object):
                 # This logic should be generic; not specific to either the Simple Baseline or CoAttention.
                 question_vec = batch_data['questions'].float().cuda(async=True)
                 images = batch_data['images'].cuda(async=True)
-
-                print(images.shape)
 
                 predicted_answer = self._model(images,question_vec,self.prepro) # TODO
                 ground_truth_answer = batch_data['gt_answer'] # TODO

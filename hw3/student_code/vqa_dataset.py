@@ -37,6 +37,8 @@ class VqaDataset(Dataset):
         self.ques_thres = ques_thres
         self.ans_thres = ans_thres
 
+        self.id_images = {}
+
         if existing_format is None:
             self.quesWordToIdx, self.quesVecSize = self.BuildBoW(self.quesWords,self.ques_thres)
             self.ansWordToIdx, self.ansVecSize = self.BuildBoW(self.ansWords,self.ans_thres)
@@ -159,6 +161,9 @@ class VqaDataset(Dataset):
 
     	return bow_vec
 
+    def saveFeatures(self, feat, id):
+    	self.id_images[id] = feat
+
     def __len__(self):
         return len(self.queIds)
 
@@ -192,10 +197,10 @@ class VqaDataset(Dataset):
         	img_idx = qa['image_id']
         	str_bracket = "{}"
         	start_idx = self.prepro_path.find(str_bracket)
-        	path = self.prepro_path[0:start_idx] + str(idx) + self.prepro_path[start_idx+2:]
+        	path = self.prepro_path[0:start_idx] + str(img_idx) + self.prepro_path[start_idx+2:]
         	features_extracted = h5py.File(path, 'r')
-        	self.features_h5 = features_extracted["features"][:]
-        	data['images'] = self.feature_h5
+        	feature = features_extracted["features"][:]
+        	data['images'] = feature
 
         else:
         	tmp_img = Image.open(self.imgIdToPath(qa['image_id']))

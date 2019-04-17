@@ -13,7 +13,6 @@ class MaskSoftMax(nn.Module):
 		mask = mask.float()
 		x_masked = x*mask + (1-mask)*(-10**10)
 		res = self.softmax(x_masked)
-
 		return res
 
 class AttentionNet(nn.Module):
@@ -27,7 +26,7 @@ class AttentionNet(nn.Module):
 		self.g_embedding = nn.Linear(self.embed_size, self.hidden_size)
 
 		self.hx_weights = nn.Linear(self.hidden_size,1)
-		self.softmax = nn.Softmax()
+		self.softmax = nn.Softmax(dim=1)
 		self.masksoftmax = MaskSoftMax()
 
 		self.tanh = nn.Tanh()
@@ -108,8 +107,6 @@ class CoattentionNet(nn.Module):
     def __init__(self, embed_size, vocab_size, ans_size, seq_len, hidden_size=512):
         super().__init__()
 
-
-
         self.hidden_size = hidden_size
         self.vocab_size = vocab_size
         self.seq_length = seq_len
@@ -128,12 +125,17 @@ class CoattentionNet(nn.Module):
         #Transpose to B*D*T
         self.tanh = nn.Tanh()
         self.dropout = nn.Dropout(0.5)
-        self.softmax = nn.Softmax()
+        self.softmax = nn.LogSoftmax(dim=1)
 
         self.unigram = nn.Conv1d(in_channels=self.embed_size, out_channels=self.embed_size, kernel_size=1, padding=0)
         self.bigram = nn.Conv1d(in_channels=self.embed_size, out_channels=self.embed_size, kernel_size=2, padding=1)
         self.trigram = nn.Conv1d(in_channels=self.embed_size, out_channels=self.embed_size, kernel_size=3, padding=1)
 
+        self.image_feat_embedding = nn.Sequential(
+        	nn.Linear(512,self.embed_size), # 512 is the feature size
+        	nn.Tanh(),
+        	nn.Dropout(0.5),
+        	)
         # Output by these layers should be B*D*T
         # Remember to narrow bigram by:
         # self.bigram = bigram.narrow(1,0,self.seq_size) seq_size is T 
@@ -143,18 +145,20 @@ class CoattentionNet(nn.Module):
         # self.max = nn.MaxPool1d(kernal_size=3)
         # Transpose to B*T*D
         self.lstm = nn.LSTM(input_size=self.embed_size, hidden_size=self.embed_size, batch_first=True)
-        self.image_feat = ResNet()
-        self.image_feat.freeze()
-        self.atten_net = AttentionNet(self.embed_size, self.seq_length, self.embed_size)
+        # self.image_feat = ResNet()
+        # self.image_feat.freeze()
+        self.word_atten_net = AttentionNet(self.embed_size, self.seq_length, self.embed_size)
+        self.phrase_atten_net = AttentionNet(self.embed_size, self.seq_length, self.embed_size)
+        self.ques_atten_net = AttentionNet(self.embed_size, self.seq_length, self.embed_size)
 
         self.word_linear = nn.Linear(self.embed_size, self.hidden_size)
         self.phrase_linear= nn.Linear(self.embed_size+self.hidden_size, self.hidden_size)
         self.ques_linear = nn.Linear(self.embed_size+self.hidden_size, self.hidden_size)
         self.out_linear = nn.Linear(self.hidden_size, self.ans_size)
 
-    def forward(self, image, question_encoding, prepro=False):
+    def forward(self, image, question_encoding, prepro):
         # TODO
-
+        self.mask = torch.sum(question_encoding, dim=2) # B*Seq
         # question_encoding: B*Seq*vocab_size
         if prepro==False:
         	image = self.image_feat(image)
@@ -162,38 +166,37 @@ class CoattentionNet(nn.Module):
         image = image.view(-1,512,196)
         image = image.permute(0,2,1)
 
+        image_feat = self.image_feat_embedding(image)
+
         word_level = self.lang_embedding(question_encoding) # B*Seq*Emb_size
         word_level_for_phrase = word_level.permute(0,2,1) # B*Emb_size*Seq
+
+        quesAtt_word, visAtt_word = self.word_atten_net(image_feat, word_level, self.mask)
 
         unigram = self.unigram(word_level_for_phrase)
         bigram = self.bigram(word_level_for_phrase)
         trigram = self.trigram(word_level_for_phrase) # B*Emb_size*Seq
 
         bigram = bigram.narrow(2,0,self.seq_length)
-        
+
         phrase_level = torch.max(torch.max(unigram,bigram),trigram) # B*Emb_size*Seq
         phrase_level = self.tanh(phrase_level)
         phrase_level = self.dropout(phrase_level) # B*Seq*Emb_size
 
-        phrase_for_lstm = phrase_level.permute(2,0,1)
+        # phrase_for_lstm = phrase_level.permute(2,0,1)
         phrase_level = phrase_level.permute(0,2,1)
 
-        lstm_output,(_,_) = self.lstm(phrase_for_lstm)
+        quesAtt_phrase, visAtt_phrase = self.phrase_atten_net(image_feat, phrase_level, self.mask)
 
-        ques_level = lstm_output.permute(1,2,0) # B*Emb_size*Seq
+        ques_level,_ = self.lstm(phrase_level)
+        # print(lstm_output.shape) # B*Seq*Emb_size
+        # ques_level = lstm_output.permute(1,2,0) # B*Emb_size*Seq
         ques_level = self.tanh(ques_level)
         ques_level = self.dropout(ques_level)
 
-        ques_level = ques_level.permute(0,2,1) # B*Seq*Emb_size
+        # ques_level = ques_level.permute(0,2,1) # B*Seq*Emb_size
 
-        self.mask = torch.zeros([word_level.shape[0],word_level.shape[2]])
-        
-        ind = torch.eq(question_encoding,torch.zeros([1,self.vocab_size]).cuda())
-        self.mask = torch.sum(question_encoding, dim=2) # B*Seq
-
-        quesAtt_word, visAtt_word = self.atten_net(image, word_level, self.mask)
-        quesAtt_phrase, visAtt_phrase = self.atten_net(image, phrase_level, self.mask)
-        quesAtt_ques, visAtt_ques = self.atten_net(image, ques_level, self.mask)
+        quesAtt_ques, visAtt_ques = self.ques_atten_net(image_feat, ques_level, self.mask)
         
         # Encoded answers
         feat1 = quesAtt_word + visAtt_word
@@ -209,11 +212,12 @@ class CoattentionNet(nn.Module):
         feat3 = torch.cat((feat3,hidden2),dim=2)
         feat3 = self.dropout(feat3)
         hidden3 = self.ques_linear(feat3)
+        hidden3 = self.tanh(hidden3)
         tmp = self.dropout(hidden3)
         outfeat = self.out_linear(tmp)
         outfeat = torch.squeeze(outfeat,dim=1)
-        ansfeat = self.softmax(outfeat)
+        outfeat = self.softmax(outfeat)
 
-        return ansfeat
+        return outfeat
 
 
