@@ -24,6 +24,8 @@ class SimpleBaselineNet(nn.Module):
 
 	def forward(self, image, question_encoding,prepro=False):
 		# TODO
+		question_encoding = torch.sum(question_encoding, dim=1)
+		question_encoding = torch.squeeze(question_encoding, dim=1)
 		image_features = image
 		if prepro == False:
 			image_features = self.img_features(image)

@@ -20,7 +20,7 @@ class TestVqaDataset(unittest.TestCase):
         vqa_dataset = VqaDataset(question_json_file_path=question_file,
                                  annotation_json_file_path=annotation_file,
                                  image_dir=current_dir,
-                                 image_filename_pattern="COCO_train2014_{}.jpg")
+                                 image_filename_pattern="COCO_train2014_{}.jpg", ques_thres=0, ans_thres=0, seq_len=20)
 
         # Act
         vqa_len = len(vqa_dataset)
@@ -42,7 +42,7 @@ class TestVqaDataset(unittest.TestCase):
         vqa_dataset = VqaDataset(question_json_file_path=question_file,
                                  annotation_json_file_path=annotation_file,
                                  image_dir=current_dir,
-                                 image_filename_pattern="COCO_train2014_{}.jpg")
+                                 image_filename_pattern="COCO_train2014_{}.jpg", ques_thres=0, ans_thres=0, seq_len=20)
         dataset_loader = DataLoader(vqa_dataset, batch_size=2)
 
         # Act & Assert - the test will fail if iterating through the data loader fails
@@ -56,6 +56,7 @@ class TestVqaDataset(unittest.TestCase):
             plt.show()
 
             # Test BoW representations
-            print("answers ",data['answers'])
+            # print("answers ",data['answers'])
             print("questions ",data['questions'])
+            print("questions size", data['questions'].shape)
             print("gt_answer ",data['gt_answer'])

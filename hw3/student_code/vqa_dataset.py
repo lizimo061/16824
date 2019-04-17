@@ -144,6 +144,20 @@ class VqaDataset(Dataset):
     				bow_vec[table['NA']] = 1
     	return bow_vec
 
+    def BoWVectorGeneric(self, sentence, table):
+    	bow_vec = np.zeros([self.seq_len,self.quesVecSize])
+
+    	for i in range(self.seq_len):
+    		if i < len(sentence):
+    			if sentence[i] in table:
+    				bow_vec[i,table[sentence[i]]] = 1
+    			else:
+    				bow_vec[i,table['NA']] = 1
+    		else:
+    			break
+
+    	return bow_vec
+
     def __len__(self):
         return len(self.queIds)
 
@@ -158,14 +172,8 @@ class VqaDataset(Dataset):
         data = {}
         tmp_question = self.vqa.qqa[idx_qa]['question']
         tmp_question = tmp_question.lower()[:-1]
-        data['questions'] = torch.from_numpy(self.BoWVector(tmp_question.split(),self.quesWordToIdx))
+        data['questions'] = torch.from_numpy(self.BoWVectorGeneric(tmp_question.split(),self.quesWordToIdx))
         tmp_answers = qa['answers']
-        # data['answers'] = np.zeros((len(tmp_answers),len(self.ansWordToIdx)))
-        # for i in range(0,len(tmp_answers)):
-        #     data['answers'][i,:] = self.BoWVector([tmp_answers[i]['answer']],self.ansWordToIdx)
-
-        # data['answers'] = torch.from_numpy(data['answers'])
-        # print(tmp_answers)
 
         data['gt_answer'] = torch.from_numpy(self.BoWVoting(tmp_answers,self.ansWordToIdx))
 

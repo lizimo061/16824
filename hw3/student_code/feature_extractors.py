@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 import torch
 from external.resnet.resnet import resnet18
 import torch.nn.functional as F
+import numpy as np
 
 class Net(nn.Module):
 	def __init__(self):
@@ -123,41 +124,75 @@ if __name__ == "__main__":
 	print("Number of testing images: ", len(test_dataset))
 	# Train:
 
-	features_shape = (len(train_dataset),512,14,14)
-	train_features_path = "./features/train_feat_resnet.h5"
-	with h5py.File(train_features_path, libver='latest') as fd:
-		features = fd.create_dataset('features', shape=features_shape,dtype='float32')
-		ids = fd.create_dataset('ids', shape=(len(train_dataset),),dtype='int32')
+	# features_shape = (len(train_dataset),512,14,14)
+	# train_features_path = "./features/train_feat_resnet.h5"
+	# with h5py.File(train_features_path, libver='latest') as fd:
+	# 	features = fd.create_dataset('features', shape=features_shape,dtype='float32')
+	# 	ids = fd.create_dataset('ids', shape=(len(train_dataset),),dtype='int32')
 
-		i=j=0
+	# 	i=j=0
 
-		for batch_id, batch_data in enumerate(train_dataset_loader):
-			images = batch_data['images'].cuda()
-			out = net(images)
+	# 	for batch_id, batch_data in enumerate(train_dataset_loader):
+	# 		images = batch_data['images'].cuda()
+	# 		out = net(images)
 
-			j = i+images.shape[0]
-			features[i:j,:,:,:] = out.data.cpu().numpy().astype('float32')
-			ids[i:j] = batch_data['images_id'].numpy().astype('int32')
+	# 		j = i+images.shape[0]
+	# 		features[i:j,:,:,:] = out.data.cpu().numpy().astype('float32')
+	# 		ids[i:j] = batch_data['images_id'].numpy().astype('int32')
 
-			i=j
+	# 		i=j
 		
 
-	features_shape = (len(test_dataset),512,14,14)
-	test_features_path = "./features/test_feat_resnet.h5"
-	with h5py.File(test_features_path, libver='latest') as fd:
-		features = fd.create_dataset('features', shape=features_shape,dtype='float32')
-		ids = fd.create_dataset('ids', shape=(len(test_dataset),),dtype='int32')
+	# features_shape = (len(test_dataset),512,14,14)
+	# test_features_path = "./features/test_feat_resnet.h5"
+	# with h5py.File(test_features_path, libver='latest') as fd:
+	# 	features = fd.create_dataset('features', shape=features_shape,dtype='float32')
+	# 	ids = fd.create_dataset('ids', shape=(len(test_dataset),),dtype='int32')
 
-		i=j=0
+	# 	i=j=0
 
-		for batch_id, batch_data in enumerate(test_dataset_loader):
-			images = batch_data['images'].cuda()
-			out = net(images)
+	# 	for batch_id, batch_data in enumerate(test_dataset_loader):
+	# 		images = batch_data['images'].cuda()
+	# 		out = net(images)
 
-			j = i+images.shape[0]
-			features[i:j,:,:,:] = out.data.cpu().numpy().astype('float32')
-			ids[i:j] = batch_data['images_id'].numpy().astype('int32')
+	# 		j = i+images.shape[0]
+	# 		features[i:j,:,:,:] = out.data.cpu().numpy().astype('float32')
+	# 		ids[i:j] = batch_data['images_id'].numpy().astype('int32')
 
-			i=j
+	# 		i=j
 
-	# preprocessFromResNet()
+	train_features_path = "./features/train_feat_resnet"
+
+	features = np.empty([len(train_dataset),512,14,14], dtype=np.float32)
+	ids = np.empty([len(train_dataset),512,14,14], dtype=int)
+	i=j=0
+
+	for batch_id, batch_data in enumerate(train_dataset_loader):
+		images = batch_data['images'].cuda()
+		out = net(images)
+
+		j = i+images.shape[0]
+		features[i:j,:,:,:] = out.data.cpu().numpy().astype('float32')
+		ids[i:j] = batch_data['images_id'].numpy().astype('int32')
+
+		i=j
+	
+	np.save_compressed(train_features_path, features=features, ids=ids)
+
+	test_features_path = "./features/test_feat_resnet"
+	features = np.empty([len(test_dataset),512,14,14], dtype=np.float32)
+	ids = np.empty([len(test_dataset),512,14,14], dtype=int)
+
+	i=j=0
+
+	for batch_id, batch_data in enumerate(test_dataset_loader):
+		images = batch_data['images'].cuda()
+		out = net(images)
+
+		j = i+images.shape[0]
+		features[i:j,:,:,:] = out.data.cpu().numpy().astype('float32')
+		ids[i:j] = batch_data['images_id'].numpy().astype('int32')
+
+		i=j
+
+	np.save_compressed(test_features_path, features=features, ids=ids)
