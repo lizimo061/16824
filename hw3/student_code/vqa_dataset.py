@@ -5,7 +5,7 @@ from PIL import Image
 import numpy as np
 import torchvision.transforms as transforms
 import h5py
-
+import tqdm
 class VqaDataset(Dataset):
     """
     Load the VQA dataset using the VQA python API. We provide the necessary subset in the External folder, but you may
@@ -51,9 +51,10 @@ class VqaDataset(Dataset):
             self.seq_len = existing_format.seq_len
 
         if self.prepro:
-        	features_extracted = h5py.File(prepro_path, 'r')
-        	self.features_h5 = features_extracted["features"][:]
-        	self.ids_h5 = features_extracted["ids"][:]
+        	self.prepro_path = prepro_path
+        	# features_extracted = h5py.File(prepro_path, 'r')
+        	# self.features_h5 = features_extracted["features"][:]
+        	# self.ids_h5 = features_extracted["ids"][:]
 
         print("The length of question vector: ", self.quesVecSize)
     
@@ -176,14 +177,25 @@ class VqaDataset(Dataset):
         tmp_answers = qa['answers']
 
         data['gt_answer'] = torch.from_numpy(self.BoWVoting(tmp_answers,self.ansWordToIdx))
-
+        data['images_id'] = qa['image_id']
         if self.prepro:
-        	h5_idxs = self.ids_h5
-        	query_idx = np.where(h5_idxs==qa['image_id'])
-        	data['images_id'] = qa['image_id']
-        	tmp_features = self.features_h5[query_idx[0][0]]
-        	tmp_features = tmp_features.astype(np.float32)
-        	data['images'] = torch.from_numpy(tmp_features)
+        	# h5_idxs = self.ids_h5
+        	# query_idx = np.where(h5_idxs==qa['image_id'])
+        	# data['images_id'] = qa['image_id']
+        	# tmp_features = self.features_h5[query_idx[0][0]]
+        	# tmp_features = tmp_features.astype(np.float32)
+        	# data['images'] = torch.from_numpy(tmp_features)
+
+        	# Above for all features in one h5 file
+        	# Below for several different feature files
+
+        	img_idx = qa['image_id']
+        	str_bracket = "{}"
+        	start_idx = self.prepro_path.find(str_bracket)
+        	path = self.prepro_path[0:start_idx] + str(idx) + self.prepro_path[start_idx+2:]
+        	features_extracted = h5py.File(path, 'r')
+        	self.features_h5 = features_extracted["features"][:]
+        	data['images'] = self.feature_h5
 
         else:
         	tmp_img = Image.open(self.imgIdToPath(qa['image_id']))
@@ -195,7 +207,6 @@ class VqaDataset(Dataset):
             	transforms.ToTensor(),
             	normalize,
         	])
-        	data['images_id'] = qa['image_id']
         	data['images'] = trans(tmp_img)
 
     

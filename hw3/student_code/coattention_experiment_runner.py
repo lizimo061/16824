@@ -11,8 +11,8 @@ class CoattentionNetExperimentRunner(ExperimentRunnerBase):
                  test_image_dir, test_question_path,test_annotation_path, batch_size, num_epochs,
                  num_data_loader_workers, preprocessing):
 
-        train_h5_path = "./features/train_feat_resnet.h5"
-        test_h5_path = "./features/test_feat_resnet.h5"
+        train_h5_path = "./features/resnet/train/train_feat_resnet_{}.h5"
+        test_h5_path = "./features/resnet/test/test_feat_resnet_{}.h5"
 
         train_dataset = VqaDataset(image_dir=train_image_dir,
                                    question_json_file_path=train_question_path,

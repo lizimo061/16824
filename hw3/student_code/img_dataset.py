@@ -6,6 +6,7 @@ import numpy as np
 import torchvision.transforms as transforms
 import h5py
 from tqdm import tqdm
+from pathlib import Path
 
 class ImgDataset(Dataset):
     """
@@ -48,7 +49,7 @@ class ImgDataset(Dataset):
             image_id = qa['image_id']
             if image_id not in count_img:
                     count_img.append(image_id)
-
+        print("Unique images size: ", len(count_img))
         return count_img
 
 

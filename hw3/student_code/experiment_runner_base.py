@@ -74,6 +74,8 @@ class ExperimentRunnerBase(object):
                 question_vec = batch_data['questions'].float().cuda(async=True)
                 images = batch_data['images'].cuda(async=True)
 
+                print(images.shape)
+
                 predicted_answer = self._model(images,question_vec,self.prepro) # TODO
                 ground_truth_answer = batch_data['gt_answer'] # TODO
                 answer_ids = ground_truth_answer.cuda()
