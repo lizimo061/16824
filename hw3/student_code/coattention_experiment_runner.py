@@ -34,7 +34,8 @@ class CoattentionNetExperimentRunner(ExperimentRunnerBase):
                          num_data_loader_workers, preprocessing)
 
         # self.optimizer = torch.optim.RMSprop(self._model.parameters(), lr=4e-4, momentum=0.99, weight_decay=1e-8) 
-        self.optimizer = torch.optim.SGD(self._model.parameters(), lr=1e-3, momentum=0.9, weight_decay=1e-8)
+        # self.optimizer = torch.optim.SGD(self._model.parameters(), lr=1e-3, momentum=0.9, weight_decay=1e-8)
+        self.optimizer = torch.optim.Adam(self._model.parameters())
 
     def _optimize(self, predicted_answers, true_answer_ids):
         # TODO

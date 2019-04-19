@@ -16,7 +16,7 @@ if __name__ == "__main__":
     parser.add_argument('--test_annotation_path', type=str)
     parser.add_argument('--batch_size', type=int, default=100)
     parser.add_argument('--num_epochs', type=int, default=100)
-    parser.add_argument('--num_data_loader_workers', type=int, default=10)
+    parser.add_argument('--num_data_loader_workers', type=int, default=6)
     parser.add_argument('--preprocessing', type=bool, default=False)
     args = parser.parse_args()
 
